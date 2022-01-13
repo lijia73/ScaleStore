@@ -1,21 +1,32 @@
 # ScaleStore: Scalable and Fault-Tolerant Key-Value Store on Disaggregated Memory
 
-
 This is the implementation repository of our submitted paper: **ScaleStore: Scalable and Fault-Tolerant Key-Value Store on Disaggregated Memory**.
 
 
 
 ## Description
 
-We propose ***ScaleStore***, a scalable and fault-tolerant memory-disaggregated KV store. *ScaleStore* reduces the client-side coordination overhead by minimizing the amount of synchronized data. Chained data management is proposed to let clients manage the data space reliably without coordination. SNAPSHOT replication protocol is introduced to manage replicated hash indexes with little coordination overhead. Moreover, an adaptive address cache is proposed to reduce the operation latency without compromising the scalability of the DM architecture. Experiment results show that *ScaleStore* outperforms the state-of-the-art MemDisagg KV stores by at most 4.5x under YCSB workload.
+This artifact provides the source code of ***ScaleStore*** and scripts to reproduce the main experiments. *ScaleStore* is a scalable and fault-tolerant memory-disaggregated KV store. It reduces the client-side coordination overhead by minimizing the amount of synchronized data. Chained data management is proposed to let clients manage the data space reliably without coordination. SNAPSHOT replication protocol is introduced to manage replicated hash indexes with little coordination overhead. Moreover, an adaptive address cache is proposed to reduce the operation latency without compromising the scalability of the DM architecture. Experiment results show that *ScaleStore* outperforms the state-of-the-art MemDisagg KV stores by at most 4.5x under YCSB workload.
 
+You can access this artifact using the following command:
+```shell
+git clone https://github.com/ScaleStore/ScaleStore.git
+```
 
 
 ## Environment
 
-* For hardware, each machine should be equipped with one **8-core Intel processer**(*e.g.*, Intel Xeon E5-2450),  **16GB DRAM**  and one **RDMA NIC card** (*e.g.*, Mellanox ConnectX-3). Each RNIC should be connected to an **Infiniband or Ethernet switch** (*e.g.*, Mellanox SX6036G). All machines are separated into memory nodes and compute nodes. At maximum 5 memory nodes and 17 compute nodes are used for the experiments in our paper. If you do not have such testbed, consider using [CloudLab](https://www.cloudlab.us/).
+#### 1. Hardware dependencies
+To reproduce the experiments, each machine should be equipped with one **8-core Intel processer**(*e.g.*, Intel Xeon E5-2450),  **16GB DRAM**  and one **RDMA NIC card** (*e.g.*, Mellanox ConnectX-3). Each RNIC should be connected to an **Infiniband or Ethernet switch** (*e.g.*, Mellanox SX6036G). All machines are separated into memory nodes and compute nodes. At maximum 5 memory nodes and 17 compute nodes are used for the experiments in our paper. If you do not have such testbed, consider using [CloudLab](https://www.cloudlab.us/).
 
-* For software, **Ubuntu 18.04** is recommended for each machine.  In our experiments, **7168 HugePages** of 2MB size in each memory node and **2048** ones in compute nodes is need to be allocated. You can set up this with  `echo 7168 > /proc/sys/vm/nr_hugepages` command for memory nodes and `echo 2048 > /proc/sys/vm/nr_hugepages` for compute nodes.
+#### 2. Software dependencies
+* **Operating system:** Ubuntu 18.04 is recommended for each machine.
+
+* **Compile toolchain:** g++ >= 7.5.0 and cmake >= 3.16.8
+
+* **Other software dependencies:** Mellanox OFED, boost 1.65.1
+ 
+* **HugePages setting:** 7168 HugePages of 2MB size in each memory node and 2048 ones in compute nodes is required. You can set up this with  `echo 7168 > /proc/sys/vm/nr_hugepages` command for memory nodes and `echo 2048 > /proc/sys/vm/nr_hugepages` for compute nodes.
 
 
 
@@ -115,7 +126,7 @@ cmake ..
 make -j
 ```
 
-We test *ScaleStore* with **micro-benchmark** and **YCSB benchmarks** respectively. For each experiments, you should put `server_config.json` in directory `./build`, and then use the following command in memory nodes to set up servers:
+We test *ScaleStore* with **micro-benchmark** and **YCSB benchmarks** respectively. For each experiments, you should place `server_config.json` in directory `./build` on each memory nodes, and then execute the following command in memory nodes to set up servers:
 
 ```shell
 numactl -N 0 -m 0 ./ycsb-test/ycsb_test_server [SERVER_NUM]
@@ -131,7 +142,7 @@ numactl -N 0 -m 0 ./ycsb-test/ycsb_test_server [SERVER_NUM]
 
     To evaluate the latency of each operation, we use a single client to iteratively execute each operation (**INSERT**, **DELETE**, **UPDATE**, and **SEARCH**) for 10,000 times.
 
-    Enter `./build/micro-test` and use the following command in client `0`：
+    Enter `./build/micro-test` and execute the following command in client `0`：
 
     ```shell
     numactl -N 0 -m 0 ./latency_test_client [PATH_TO_CLIENT_CONFIG]
@@ -159,7 +170,7 @@ numactl -N 0 -m 0 ./ycsb-test/ycsb_test_server [SERVER_NUM]
 
 * **Workload preparation**
 
-    Firstly, download all the testing workloads using `sh download_workload.sh` in directory `./setup` and unpack the workloads you want to `./build/ycsb-test/workloads`.
+    Firstly, download all the testing workloads using `sh download_workload.sh` in directory `./setup` and unpack the workloads you want into `./build/ycsb-test/workloads`.
 
     Here is the description of the YCSB workloads:
 
@@ -171,7 +182,7 @@ numactl -N 0 -m 0 ./ycsb-test/ycsb_test_server [SERVER_NUM]
     | D        | 0.95   | 0      | 0.05   |
     | upd[X]   | 1-[X]% | [X]%   | 0      |
 
-    Then, you should execute the following command in `./build/ycsb-test` to split the workloads into N parts(N is the total number of client threads):
+    Then, you should execute the following command in `./build/ycsb-test` to split the workloads into N parts(N is the **total number** of client threads, that is, 8 * number of client nodes):
 
     ```shell
     python split-workload.py [N]
