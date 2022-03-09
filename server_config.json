@@ -12,7 +12,7 @@
     "ib_port_id": 1,
     "ib_gid_idx": 0,
     "server_base_addr": "0x10000000",
-    "server_data_len": 15032385536,
+    "server_data_len": 10737418240,
     "block_size": 67108864,
     "subblock_size": 256,
     "client_local_size": 1073741824,
