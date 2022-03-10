@@ -17,52 +17,60 @@
 #define MAX_NUM_SUBBLOCKS 4
 #define MAX_WATER_MARK 0.7
 
-typedef struct TagClientMMBlock {
+typedef struct TagClientMMBlock
+{
     struct MrInfo mr_info_list[MAX_REP_NUM];
     uint8_t server_id_list[MAX_REP_NUM];
-    bool * bmap;
+    bool *bmap;
     uint32_t num_allocated;
-    int32_t  prev_free_subblock_idx;
-    int32_t  next_free_subblock_idx;
-    int32_t  next_free_subblock_cnt;
+    int32_t prev_free_subblock_idx;
+    int32_t next_free_subblock_idx;
+    int32_t next_free_subblock_cnt;
 
     uint64_t next_mmblock_addr[MAX_REP_NUM];
 } ClientMMBlock;
 
-enum ClientAllocType {
+enum ClientAllocType
+{
     TYPE_SUBTABLE = 1,
-    TYPE_KVBLOCK  = 2,
+    TYPE_KVBLOCK = 2,
+    TYPE_BASELINE = 3,
 };
 
-typedef struct TagClientMMAllocCtx {
-    uint8_t  server_id_list[MAX_REP_NUM];
+typedef struct TagClientMMAllocCtx
+{
+    uint8_t server_id_list[MAX_REP_NUM];
     uint64_t addr_list[MAX_REP_NUM];
     uint64_t prev_addr_list[MAX_REP_NUM]; // TODO: modify address as address + serverid
     uint64_t next_addr_list[MAX_REP_NUM];
     uint32_t rkey_list[MAX_REP_NUM];
 
     uint32_t num_subblocks;
-    bool     need_change_prev;
+    bool need_change_prev;
 } ClientMMAllocCtx;
 
-typedef struct TagClientMMAllocSubtableCtx {
-    uint8_t  server_id;
+typedef struct TagClientMMAllocSubtableCtx
+{
+    uint8_t server_id;
     uint64_t addr;
 } ClientMMAllocSubtableCtx;
 
-typedef struct TagRecoverLogInfo {
-    KVLogHeader * local_header_addr;
-    uint64_t      remote_addr;
-    uint8_t       server_id;
+typedef struct TagRecoverLogInfo
+{
+    KVLogHeader *local_header_addr;
+    uint64_t remote_addr;
+    uint8_t server_id;
 } RecoverLogInfo;
 
-typedef struct TagSubblockInfo {
+typedef struct TagSubblockInfo
+{
     uint64_t addr_list[MAX_REP_NUM];
     uint32_t rkey_list[MAX_REP_NUM];
-    uint8_t  server_id_list[MAX_REP_NUM];
+    uint8_t server_id_list[MAX_REP_NUM];
 } SubblockInfo;
 
-class ClientMM {
+class ClientMM
+{
 private:
     uint32_t num_replication_;
     uint32_t num_idx_rep_;
@@ -75,7 +83,7 @@ private:
     uint32_t subblock_num_;
     uint32_t last_allocated_;
 
-    uint8_t  pr_log_server_id_;
+    uint8_t pr_log_server_id_;
     uint64_t pr_log_head_;
 
     uint64_t client_meta_addr_;
@@ -85,15 +93,15 @@ private:
     bool is_allocing_new_block_;
 
     // for recovery
-    void * recover_buf_;
-    struct ibv_mr             * recover_mr_;
+    void *recover_buf_;
+    struct ibv_mr *recover_mr_;
     std::vector<RecoverLogInfo> recover_log_info_list_;
     std::unordered_map<uint64_t, bool> recover_addr_is_allocated_map_;
-    void * log_header_st_ptr_;
+    void *log_header_st_ptr_;
 
     // modification
     std::queue<SubblockInfo> subblock_free_queue_;
-    SubblockInfo             last_allocated_info_;
+    SubblockInfo last_allocated_info_;
 
     std::map<std::string, std::queue<SubblockInfo>> allocated_subblock_key_map_;
 
@@ -103,106 +111,120 @@ private:
     struct timeval get_addr_meta_et_;
     struct timeval traverse_log_et_;
 
-// private methods
+    // private methods
 private:
-    int init_get_new_block_from_server(UDPNetworkManager * nm);
+    int init_get_new_block_from_server(UDPNetworkManager *nm);
     int init_reg_space(struct MrInfo mr_inf_list[][MAX_REP_NUM], uint8_t server_id_list[][MAX_REP_NUM],
-            UDPNetworkManager * nm, int reg_type);
-    int dyn_get_new_block_from_server(UDPNetworkManager * nm);
-    int get_new_block_from_server(UDPNetworkManager * nm);
-    int local_reg_blocks(const struct MrInfo * mr_info_list, const uint8_t * server_id_list);
-    int reg_new_space(const struct MrInfo * mr_info_list, const uint8_t * server_id_list,
-            UDPNetworkManager * nm, int reg_type);
-    int dyn_reg_new_space(const struct MrInfo * mr_info_list, const uint8_t * server_id_list,
-            UDPNetworkManager * nm, int reg_type);
-    int32_t alloc_from_sid(uint32_t server_id, UDPNetworkManager * nm, int alloc_type,
-            __OUT struct MrInfo * mr_info);
-    void update_mm_block_next(ClientMMBlock * mm_block);
-    int remote_write_meta_addr(UDPNetworkManager * nm);
+                       UDPNetworkManager *nm, int reg_type);
+    int dyn_get_new_block_from_server(UDPNetworkManager *nm);
+    int get_new_block_from_server(UDPNetworkManager *nm);
+    int local_reg_blocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list);
+    int reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *server_id_list,
+                      UDPNetworkManager *nm, int reg_type);
+    int dyn_reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *server_id_list,
+                          UDPNetworkManager *nm, int reg_type);
+    int32_t alloc_from_sid(uint32_t server_id, UDPNetworkManager *nm, int alloc_type,
+                           __OUT struct MrInfo *mr_info);
+    void update_mm_block_next(ClientMMBlock *mm_block);
+    int remote_write_meta_addr(UDPNetworkManager *nm);
 
-    int mm_recovery(UDPNetworkManager * nm);
-    int mm_recover_prepare_space(UDPNetworkManager * nm);
-    int get_remote_log_header(UDPNetworkManager * nm, uint8_t server_id, uint64_t r_addr, 
-            KVLogHeader * local_addr);
-    int mm_traverse_log(UDPNetworkManager * nm);
-    int mm_get_addr_meta(UDPNetworkManager * nm);
-    int mm_recover_mm_blocks(UDPNetworkManager * nm);
+    int mm_recovery(UDPNetworkManager *nm);
+    int mm_recover_prepare_space(UDPNetworkManager *nm);
+    int get_remote_log_header(UDPNetworkManager *nm, uint8_t server_id, uint64_t r_addr,
+                              KVLogHeader *local_addr);
+    int mm_traverse_log(UDPNetworkManager *nm);
+    int mm_get_addr_meta(UDPNetworkManager *nm);
+    int mm_recover_mm_blocks(UDPNetworkManager *nm);
 
-    uint32_t get_subblock_idx(uint64_t addr, ClientMMBlock * cur_block);
-    ClientMMBlock * get_new_mmblock();
+    uint32_t get_subblock_idx(uint64_t addr, ClientMMBlock *cur_block);
+    ClientMMBlock *get_new_mmblock();
 
-    void gen_subblock_info(ClientMMBlock * mm_block, uint32_t subblock_idx, __OUT SubblockInfo * subblock_info);
+    void gen_subblock_info(ClientMMBlock *mm_block, uint32_t subblock_idx, __OUT SubblockInfo *subblock_info);
 
-// inline private methods
+    // inline private methods
 private:
-    inline uint32_t get_alloc_hint_rr() {
-        return last_allocated_ ++;
+    inline uint32_t get_alloc_hint_rr()
+    {
+        return last_allocated_++;
     }
 
-    inline float get_water_mark() {
+    inline float get_water_mark()
+    {
         float num_used = 0;
-        for (size_t i = 0; i < mm_blocks_.size(); i ++) {
+        for (size_t i = 0; i < mm_blocks_.size(); i++)
+        {
             num_used += mm_blocks_[i]->num_allocated;
         }
         return num_used / (mm_blocks_.size() * subblock_num_);
     }
 
-// public methods
+    // public methods
 public:
     uint64_t mm_block_sz_;
     uint64_t subblock_sz_;
 
-    ClientMM(const struct GlobalConfig * conf, 
-        UDPNetworkManager * nm);
+    ClientMM(const struct GlobalConfig *conf,
+             UDPNetworkManager *nm);
     ~ClientMM();
 
-    void get_log_head(__OUT uint64_t * pr_log_head, __OUT uint64_t * bk_log_head);
-    
-    void mm_alloc(size_t size, UDPNetworkManager * nm, __OUT ClientMMAllocCtx * ctx);
-    void mm_alloc(size_t size, UDPNetworkManager * nm, std::string key, __OUT ClientMMAllocCtx * ctx);
-    void mm_alloc_log_info(RecoverLogInfo * log_info, __OUT ClientMMAllocCtx * ctx);
+    void get_log_head(__OUT uint64_t *pr_log_head, __OUT uint64_t *bk_log_head);
+
+    void mm_alloc(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
+    void mm_alloc(size_t size, UDPNetworkManager *nm, std::string key, __OUT ClientMMAllocCtx *ctx);
+    void mm_alloc_log_info(RecoverLogInfo *log_info, __OUT ClientMMAllocCtx *ctx);
 
     void mm_free_key(std::string key);
     void mm_free_key_all(std::string key);
-    
-    void mm_alloc_subtable(UDPNetworkManager * nm, __OUT ClientMMAllocSubtableCtx * ctx);
 
-    int  get_last_log_recover_info(__OUT RecoverLogInfo * recover_log_info);
+    void mm_alloc_subtable(UDPNetworkManager *nm, __OUT ClientMMAllocSubtableCtx *ctx);
+
+    int get_last_log_recover_info(__OUT RecoverLogInfo *recover_log_info);
     void free_recover_buf();
 
-    void get_time_bread_down(std::vector<struct timeval> & time_vec);
+    void get_time_bread_down(std::vector<struct timeval> &time_vec);
 
-// inline public methods
+    // memory management
+    void mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
+
+    // inline public methods
 public:
-    inline uint64_t get_remote_meta_ptr() {
+    inline uint64_t get_remote_meta_ptr()
+    {
         return client_meta_addr_;
     }
 
-    inline uint32_t get_num_mm_blocks() {
+    inline uint32_t get_num_mm_blocks()
+    {
         return mm_blocks_.size();
     }
 
-    inline bool should_alloc_new() {
+    inline bool should_alloc_new()
+    {
         float water_mark = get_water_mark();
         return water_mark > MAX_WATER_MARK;
     }
 
-    inline bool should_start_gc() {
-        ClientMMBlock * cur_mmblock = mm_blocks_[cur_mm_block_idx_];
+    inline bool should_start_gc()
+    {
+        ClientMMBlock *cur_mmblock = mm_blocks_[cur_mm_block_idx_];
         return cur_mmblock->next_free_subblock_cnt < MAX_NUM_SUBBLOCKS;
     }
 
-    inline ClientMMBlock * get_cur_mm_block() {
+    inline ClientMMBlock *get_cur_mm_block()
+    {
         return mm_blocks_[cur_mm_block_idx_];
     }
 
-    inline void get_log_head(__OUT uint8_t * pr_log_server_id, __OUT uint64_t * pr_log_head) {
+    inline void get_log_head(__OUT uint8_t *pr_log_server_id, __OUT uint64_t *pr_log_head)
+    {
         *pr_log_server_id = pr_log_server_id_;
         *pr_log_head = pr_log_head_;
     }
 
-    inline size_t get_aligned_size(size_t size) {
-        if ((size % subblock_sz_) == 0) {
+    inline size_t get_aligned_size(size_t size)
+    {
+        if ((size % subblock_sz_) == 0)
+        {
             return size;
         }
         size_t aligned = ((size / subblock_sz_) + 1) * subblock_sz_;
