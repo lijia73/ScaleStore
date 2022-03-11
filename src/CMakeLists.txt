@@ -7,7 +7,8 @@ list(APPEND source_ddckv
     hashtable.cc
     client_mm.cc
     client.cc
-    client_cr.cc)
+    client_cr.cc
+    client_fmm.cc)
 
 add_library(libddckv STATIC ${source_ddckv})
 

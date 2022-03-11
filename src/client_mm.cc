@@ -797,7 +797,8 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
 
     if (mr_info_list[0].addr == 0)
     {
-        return -1;
+        ctx->addr_list[0] = 0;
+        return;
     }
 
     ret = dyn_reg_new_space(mr_info_list, server_id_list, nm, TYPE_BASELINE);
@@ -805,9 +806,9 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
 
     for (int i = 0; i < num_replication_; i++)
     {
-        ctx.addr_list[i] = mr_info_list[i].addr;
-        ctx.rkey_list[i] = mr_info_list[i].rkey;
-        ctx.server_id_list[i] = server_id_list[i];
+        ctx->addr_list[i] = mr_info_list[i].addr;
+        ctx->rkey_list[i] = mr_info_list[i].rkey;
+        ctx->server_id_list[i] = server_id_list[i];
     }
 
     ClientMMBlock *new_mm_block = (ClientMMBlock *)malloc(sizeof(ClientMMBlock));
