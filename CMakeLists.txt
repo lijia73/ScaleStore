@@ -13,6 +13,7 @@ add_subdirectory(src)
 add_subdirectory(ycsb-test)
 add_subdirectory(crash-recover-test)
 add_subdirectory(micro-test)
+add_subdirectory(mm-test)
 
 enable_testing()
 add_subdirectory(tests)

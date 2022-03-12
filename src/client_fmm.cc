@@ -12,19 +12,11 @@
 
 #include "kv_debug.h"
 
-#define READ_BUCKET_ST_WRID 100
-#define WRITE_KV_ST_WRID 200
-#define READ_KV_ST_WRID 300
-#define CAS_ST_WRID 400
-#define INVALID_ST_WRID 500
-#define READ_CACHE_ST_WRID 600
-#define WRITE_HB_ST_WRID 700
-#define LOG_COMMIT_ST_WRID 800
-#define UPDATE_PREV_ST_WRID 900
-#define READ_ALL_BUCKET_ST_WRID 150
+#define BASELINE_ALLOC_SIZE 1024
 
 ClientFMM::ClientFMM(const struct GlobalConfig *conf)
 {
+    gettimeofday(&recover_st_, NULL);
     num_idx_rep_ = conf->num_idx_rep;
     num_replication_ = conf->num_replication;
     remote_global_meta_addr_ = conf->server_base_addr;
@@ -35,7 +27,7 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
     num_memory_ = conf->memory_num;
     workload_run_time_ = conf->workload_run_time;
 
-    printf("num_idx_rep: %d\n", num_idx_rep_);
+    // printf("num_idx_rep: %d\n", num_idx_rep_);
 
     num_coroutines_ = conf->num_coroutines;
     num_total_operations_ = 0;
@@ -57,9 +49,7 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
 
     // create cm
     nm_ = new UDPNetworkManager(conf);
-
     int ret = connect_ib_qps();
-    // assert(ret == 0);
 
     // create mm
     mm_ = new ClientMM(conf, nm_);
@@ -67,10 +57,12 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
     // alloc mr
     IbInfo ib_info;
     nm_->get_ib_info(&ib_info);
-    local_buf_ = mmap(NULL, CORO_LOCAL_BUF_LEN * num_coroutines_, PROT_READ | PROT_WRITE,
+    size_t local_buf_sz = (size_t)CORO_LOCAL_BUF_LEN * num_coroutines_;
+    printf("allocating %ld\n", local_buf_sz);
+    local_buf_ = mmap(NULL, local_buf_sz, PROT_READ | PROT_WRITE,
                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
     // assert(local_buf_ != MAP_FAILED);
-    local_buf_mr_ = ibv_reg_mr(ib_info.ib_pd, local_buf_, CORO_LOCAL_BUF_LEN * num_coroutines_,
+    local_buf_mr_ = ibv_reg_mr(ib_info.ib_pd, local_buf_, local_buf_sz,
                                IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ);
     // print_log(DEBUG, "register mr addr(0x%lx) rkey(%x)", local_buf_mr_->addr, local_buf_mr_->rkey);
 
@@ -94,44 +86,33 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
     }
 
     // record meta info
-    if (conf->is_recovery == false)
-    {
-        mm_->get_log_head(&pr_log_server_id_, &pr_log_head_);
-        pr_log_tail_ = pr_log_head_;
-        ret = write_client_meta_info();
-        // assert(ret == 0);
+    mm_->get_log_head(&pr_log_server_id_, &pr_log_head_);
+    pr_log_tail_ = pr_log_head_;
+    ret = write_client_meta_info();
+    // assert(ret == 0);
 
-        // get root
-        ret = get_race_root();
+    // get root
+    ret = get_race_root();
+    // kv_assert(ret == 0);
+
+    if (my_server_id_ - conf->memory_num == 0)
+    {
+        // init table
+        ret = init_hash_table();
         // kv_assert(ret == 0);
 
-        if (my_server_id_ - conf->memory_num == 0)
-        {
-            // init table
-            ret = init_hash_table();
-            // kv_assert(ret == 0);
+        ret = sync_init_finish();
+        // kv_assert(ret == 0);
 
-            ret = sync_init_finish();
-            // kv_assert(ret == 0);
-
-            ret = get_race_root();
-            // kv_assert(ret == 0);
-        }
-        else
-        {
-            while (!init_is_finished())
-                ;
-            ret = get_race_root();
-            // kv_assert(ret == 0);
-        }
+        ret = get_race_root();
+        // kv_assert(ret == 0);
     }
     else
     {
+        while (!init_is_finished())
+            ;
         ret = get_race_root();
         // kv_assert(ret == 0);
-
-        ret = client_recovery();
-        // assert(ret == 0);
     }
 }
 
@@ -141,31 +122,37 @@ ClientFMM::~ClientFMM()
     delete mm_;
 }
 
-int ClientFMM::init_hash_table()
+int ClientFMM::connect_ib_qps()
 {
-    // initialize remote subtable entry after getting root information
-    for (int i = 0; i < RACE_HASH_INIT_SUBTABLE_NUM; i++)
+    uint32_t num_servers = nm_->get_num_servers();
+    int ret = 0;
+    for (int i = 0; i < num_servers; i++)
     {
-        for (int j = 0; j < RACE_HASH_SUBTABLE_NUM / RACE_HASH_INIT_SUBTABLE_NUM; j++)
-        {
-            uint64_t subtable_idx = j * RACE_HASH_INIT_SUBTABLE_NUM + i;
-            ClientMMAllocSubtableCtx subtable_info[num_idx_rep_];
-            mm_->mm_alloc_subtable(nm_, subtable_info);
-            for (int r = 0; r < num_idx_rep_; r++)
-            {
-                // print_log(DEBUG, "[%s] subtable(%lx) on server(%d)", __FUNCTION__, subtable_info[r].addr, subtable_info[r].server_id);
-                race_root_->subtable_entry[subtable_idx][r].lock = 0;
-                race_root_->subtable_entry[subtable_idx][r].local_depth = RACE_HASH_INIT_LOCAL_DEPTH;
-                race_root_->subtable_entry[subtable_idx][r].server_id = subtable_info[r].server_id;
-                // assert((subtable_info[r].addr & 0xFF) == 0);
-                HashIndexConvert64To40Bits(subtable_info[r].addr, race_root_->subtable_entry[subtable_idx][r].pointer);
-            }
-        }
+        struct MrInfo *gc_info = (struct MrInfo *)malloc(sizeof(struct MrInfo));
+        ret = nm_->client_connect_one_rc_qp(i, gc_info);
+        // assert(ret == 0);
+        server_mr_info_map_[i] = gc_info;
+        // print_log(DEBUG, "connect to server(%d) addr(%lx) rkey(%x)", i, server_mr_info_map_[i]->addr, server_mr_info_map_[i]->rkey);
+    }
+    return 0;
+}
+
+int ClientFMM::write_client_meta_info()
+{
+    ClientLogMetaInfo meta_info;
+    int ret;
+    meta_info.pr_server_id = pr_log_server_id_;
+    meta_info.pr_log_head = pr_log_head_;
+    meta_info.pr_log_tail = pr_log_tail_;
+
+    for (int i = 0; i < num_replication_; i++)
+    {
+        struct MrInfo *cur_mr_info = server_mr_info_map_[i];
+        // print_log(DEBUG, "write meta info to server(%d) addr(0x%lx) rkey(%x) len(%d)", i, cur_mr_info->addr, cur_mr_info->rkey, sizeof(ClientLogMetaInfo));
+        ret = nm_->nm_rdma_write_inl_to_sid(&meta_info, sizeof(ClientLogMetaInfo), remote_meta_addr_, cur_mr_info->rkey, i);
+        // assert(ret == 0);
     }
 
-    // write root information back to all replicas
-    int ret = write_race_root();
-    // assert(ret == 0);
     return 0;
 }
 
@@ -196,9 +183,16 @@ bool ClientFMM::init_is_finished()
     return false;
 }
 
+void ClientFMM::update_kv_header(KVLogHeader *header, ClientMMAllocCtx *mm_alloc_ctx)
+{
+    header->next_addr = mm_alloc_ctx->next_addr_list[0];
+    header->prev_addr = mm_alloc_ctx->prev_addr_list[0];
+}
+
 int ClientFMM::alloc_baseline(MMReqCtx *ctx)
 {
-    uint32_t alloc_size = size + sizeof(KVLogHeader);
+    // 1. allocate remote memory
+    uint32_t alloc_size = ctx->size_ + sizeof(KVLogHeader);
     mm_->mm_alloc_baseline(alloc_size, nm_, &ctx->mm_alloc_ctx);
     if (ctx->mm_alloc_ctx.addr_list[0] < server_st_addr_ || ctx->mm_alloc_ctx.addr_list[0] >= server_st_addr_ + server_data_len_)
     {
@@ -207,6 +201,112 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
         return ctx->ret_code;
     }
 
+    // 2. update kv header
+    update_kv_header(header, &ctx->mm_alloc_ctx);
+
+    // 3. generate write header send requests
+    uint32_t write_kv_sr_list_num;
+    IbvSrList *write_kv_sr_list = gen_write_kv_sr_lists(ctx->coro_id, ctx->kv_info, &ctx->mm_alloc_ctx, &write_kv_sr_list_num);
+
+    // 4. post requests and wait for completion
+    struct ibv_wc wc;
+    ret = nm_->rdma_post_sr_lists_sync(write_kv_sr_list, write_kv_sr_list_num, &wc);
+    free_write_kv_sr_lists(write_kv_sr_list);
+
     ctx->is_finished = true;
-    return ctx->ret_code
+    return ctx->ret_code;
+}
+
+IbvSrList *Client::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info,
+                                         __OUT uint32_t *num_sr_lists)
+{
+    IbvSrList *ret_sr_list = (IbvSrList *)malloc(sizeof(IbvSrList) * num_replication_);
+    struct ibv_send_wr *sr = (struct ibv_send_wr *)malloc(sizeof(struct ibv_send_wr) * num_replication_);
+    struct ibv_sge *sge = (struct ibv_sge *)malloc(sizeof(struct ibv_sge) * num_replication_);
+    memset(sr, 0, sizeof(struct ibv_send_wr) * num_replication_);
+    memset(sge, 0, sizeof(struct ibv_sge) * num_replication_);
+
+    for (int i = 0; i < num_replication_; i++)
+    {
+        sge[i].addr = (uint64_t)a_kv_info->l_addr;
+        // sge[i].length = r_mm_info->num_subblocks * mm_->subblock_sz_;
+        sge[i].length = mm_->block_sz_;
+        sge[i].lkey = a_kv_info->lkey;
+
+        sr[i].wr_id = ib_gen_wr_id(coro_id, r_mm_info->server_id_list[i], WRITE_KV_ST_WRID, i + 1);
+        sr[i].sg_list = &sge[i];
+        sr[i].num_sge = 1;
+        sr[i].opcode = IBV_WR_RDMA_WRITE;
+        sr[i].wr.rdma.remote_addr = r_mm_info->addr_list[i];
+        sr[i].wr.rdma.rkey = r_mm_info->rkey_list[i];
+        sr[i].next = NULL;
+
+        ret_sr_list[i].sr_list = &sr[i];
+        ret_sr_list[i].num_sr = 1;
+        ret_sr_list[i].server_id = r_mm_info->server_id_list[i];
+
+        // print_log(DEBUG, "\t  [%s] write kv to server(%d) addr(%lx) rkey(%x)", __FUNCTION__,
+        //     ret_sr_list[i].server_id, sr[i].wr.rdma.remote_addr, sr[i].wr.rdma.rkey);
+    }
+
+    *num_sr_lists = num_replication_;
+    return ret_sr_list;
+}
+
+void ClientFMM::free_write_kv_sr_lists(IbvSrList *sr_list)
+{
+    free(sr_list[0].sr_list[0].sg_list);
+    free(sr_list[0].sr_list);
+    free(sr_list);
+}
+
+int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
+{
+    num_total_operations_ = num_keys;
+    num_local_operations_ = num_keys;
+
+    if (kv_info_list_ != NULL)
+    {
+        free(kv_info_list_);
+    }
+
+    if (mm_req_ctx_list_ != NULL)
+    {
+        delete[] mm_req_ctx_list_;
+    }
+    kv_info_list_ = (KVInfo *)malloc(sizeof(KVInfo) * num_local_operations_);
+    assert(kv_info_list_ != NULL);
+    memset(kv_info_list_, 0, sizeof(KVInfo) * num_local_operations_);
+
+    mm_req_ctx_list_ = new MMReqCtx[num_local_operations_];
+    assert(kv_req_ctx_list_ != NULL);
+
+    uint64_t input_buf_ptr = (uint64_t)input_buf_;
+
+    for (int i = 0; i < num_local_operations_; i++)
+    {
+        uint32_t all_len = BASELINE_ALLOC_SIZE;
+        kv_info_list_[i].l_addr = (void *)input_buf_ptr;
+        kv_info_list_[i].lkey = input_buf_mr_->lkey;
+
+        KVLogHeader *kv_log_header = (KVLogHeader *)input_buf_ptr;
+        kv_log_header->ctl_bits = KV_LOG_VALID;
+        input_buf_ptr += all_len;
+
+        init_mm_req_ctx(&mm_req_ctx_list_[i], op_type);
+    }
+}
+void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, char *operation)
+{
+    req_ctx->coro_id = 0;
+    req_ctx->size = BASELINE_ALLOC_SIZE;
+
+    if (strcmp(operation, "BASELINE") == 0)
+    {
+        req_ctx->req_type = MM_REQ_BASELINE;
+    }
+    else if (strcmp(operation, "IMPROVEMENT") == 0)
+    {
+        req_ctx->req_type = MM_REQ_IMPROVEMENT;
+    }
 }

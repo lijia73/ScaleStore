@@ -35,6 +35,7 @@ enum ClientAllocType
     TYPE_SUBTABLE = 1,
     TYPE_KVBLOCK = 2,
     TYPE_BASELINE = 3,
+    TYPE_IMPROVEMENT = 4,
 };
 
 typedef struct TagClientMMAllocCtx

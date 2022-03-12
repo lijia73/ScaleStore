@@ -38,9 +38,8 @@ typedef struct TagMMReqCtx
     uint64_t coro_id;
     uint8_t req_type;
     KVInfo *kv_info;
-    uint32_t lkey;
 
-    uint32_t size;
+    uint32_t size_;
 
     ClientMMAllocCtx mm_alloc_ctx;
 
@@ -259,13 +258,25 @@ private:
 
     // private methods
 private:
+    bool init_is_finished();
+    int sync_init_finish();
+    int connect_ib_qps();
+    int write_client_meta_info();
+    int init_hash_table();
+
+    void init_mm_req_ctx(MMReqCtx *req_ctx, char *operation);
+
     // public methods
 public:
     ClientFMM(const struct GlobalConfig *conf);
     ~ClientFMM();
 
-    KVInfo *kv_info_list_;
-    KVReqCtx *kv_req_ctx_list_;
+    int alloc_baseline(MMReqCtx *ctx);
+
+    int load_seq_mm_requests(uint32_t num_ops, char *op_type);
+
+    KVInfo   * kv_info_list_;
+    MMReqCtx *mm_req_ctx_list_;
     uint32_t num_total_operations_;
     uint32_t num_local_operations_;
     uint32_t num_coroutines_;
