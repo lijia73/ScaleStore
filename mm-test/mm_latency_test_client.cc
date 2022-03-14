@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sched.h>
 
-#include "latency_test.h"
+#include "mm_latency_test.h"
 
 int main(int argc, char **argv)
 {

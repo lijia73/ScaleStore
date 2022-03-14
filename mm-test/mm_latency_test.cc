@@ -3,7 +3,7 @@
 
 #include "client.h"
 
-#include "latency_test.h"
+#include "mm_latency_test.h"
 
 #define WORKLOAD_ALL (-1)
 // #define WORKLOAD_NUM WORKLOAD_ALL
