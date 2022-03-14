@@ -9,7 +9,7 @@ target_link_libraries(mm_latency_test
 )
 
 target_link_libraries(mm_latency_test_client
-    latency_test
+    mm_latency_test
     libddckv
     pthread
     ibverbs
