@@ -1,5 +1,5 @@
-add_library(mm_latency_test latency_test.cc)
-add_executable(mm_latency_test_client latency_test_client.cc)
+add_library(mm_latency_test mm_latency_test.cc)
+add_executable(mm_latency_test_client mm_latency_test_client.cc)
 
 target_link_libraries(mm_latency_test
     libddckv
