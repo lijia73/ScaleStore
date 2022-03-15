@@ -122,7 +122,8 @@ private:
     int init_reg_space(struct MrInfo mr_inf_list[][MAX_REP_NUM], uint8_t server_id_list[][MAX_REP_NUM],
                        UDPNetworkManager *nm, int reg_type);
     int32_t dyn_get_new_block_from_server(UDPNetworkManager *nm);
-    int32_t dyn_get_new_block_from_server_baseline(UDPNetworkManager *nm) int get_new_block_from_server(UDPNetworkManager *nm);
+    int32_t dyn_get_new_block_from_server_baseline(UDPNetworkManager *nm);
+    int get_new_block_from_server(UDPNetworkManager *nm);
     int local_reg_subblocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list);
     int local_reg_blocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list);
     int reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *server_id_list,
