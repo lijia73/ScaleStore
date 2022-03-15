@@ -837,35 +837,6 @@ void ClientMM::get_time_bread_down(std::vector<struct timeval> &time_vec)
     time_vec.push_back(traverse_log_et_);
 }
 
-int32_t ClientMM::dyn_get_new_block_from_server(UDPNetworkManager *nm)
-{
-    // n_dyn_req_ ++;
-    int ret = 0;
-    uint32_t my_server_id = nm->get_server_id();
-    uint32_t alloc_hint = get_alloc_hint_rr();
-    uint32_t pr_server_id = nm->get_one_server_id(alloc_hint);
-    uint32_t num_servers = nm->get_num_servers();
-
-    struct MrInfo mr_info_list[MAX_REP_NUM];
-    uint8_t server_id_list[MAX_REP_NUM];
-    for (int i = 0; i < num_replication_; i++)
-    {
-        uint32_t server_id = (pr_server_id + i) % num_servers;
-        server_id_list[i] = server_id;
-        ret = alloc_from_sid(server_id, nm, TYPE_KVBLOCK, &mr_info_list[i]);
-        // assert(ret == 0);
-    }
-
-    if (mr_info_list[0].addr == 0)
-    {
-        return -1;
-    }
-
-    ret = dyn_reg_new_space(mr_info_list, server_id_list, nm, TYPE_KVBLOCK);
-    // assert(ret == 0);
-    return 0;
-}
-
 // memory management
 void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx)
 {
