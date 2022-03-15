@@ -189,7 +189,7 @@ void ClientFMM::update_kv_header(KVLogHeader *header, ClientMMAllocCtx *mm_alloc
     header->prev_addr = mm_alloc_ctx->prev_addr_list[0];
 }
 
-int ClientFMM::alloc_baseline(MMReqCtx *ctx)
+void ClientFMM::alloc_baseline(MMReqCtx *ctx)
 {
     int ret = 0;
     KVLogHeader *header = (KVLogHeader *)ctx->kv_info->l_addr;
@@ -216,7 +216,7 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
     free_write_kv_sr_lists(write_kv_sr_list);
 
     ctx->is_finished = true;
-    return ctx->ret_code;
+    return ctx->ret_val->ret_code;
 }
 
 IbvSrList *ClientFMM::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info,
@@ -311,4 +311,8 @@ void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, char *operation)
     {
         req_ctx->req_type = MM_REQ_IMPROVEMENT;
     }
+}
+
+int ClientFMM::get_num_rep() {
+    return num_replication_;
 }

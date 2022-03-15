@@ -47,7 +47,11 @@ typedef struct TagMMReqCtx
     ClientMMAllocCtx mm_alloc_ctx;
 
     bool is_finished;
-    int ret_code;
+    union
+    {
+        void *value_addr; // for alloc return value
+        int ret_code;
+    } ret_val;
 
 } MMReqCtx;
 
@@ -274,7 +278,7 @@ private:
     void free_write_kv_sr_lists(IbvSrList *sr_list);
 
     void init_mm_req_ctx(MMReqCtx *req_ctx, char *operation);
-    void update_kv_header(KVLogHeader * kv_header, ClientMMAllocCtx * alloc_ctx);
+    void update_kv_header(KVLogHeader *kv_header, ClientMMAllocCtx *alloc_ctx);
 
     // public methods
 public:

@@ -9,13 +9,6 @@
 // #define WORKLOAD_NUM WORKLOAD_ALL
 #define WORKLOAD_NUM 100000
 
-int test_alloc_baseline_lat(ClientFMM &client)
-{
-    char out_fname[128];
-    int num_rep = client.get_num_rep();
-    sprintf(out_fname, "results/alloc_baseline_lat-%drp.txt", num_rep);
-    return test_lat(client, "BASELINE", out_fname);
-}
 static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
 {
     int ret = 0;
@@ -27,7 +20,6 @@ static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
     memset(lat_list, 0, sizeof(uint64_t) * client.num_local_operations_);
 
     uint32_t num_failed = 0;
-    void *search_addr;
     struct timeval st, et;
     for (int i = 0; i < client.num_local_operations_; i++)
     {
@@ -38,9 +30,9 @@ static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
         {
         case MM_REQ_BASELINE:
             gettimeofday(&st, NULL);
-            alloc_addr = client.alloc_baseline(ctx);
+            client.alloc_baseline(ctx);
             gettimeofday(&et, NULL);
-            if (alloc_addr == NULL)
+            if (ret == MM_OPS_FAIL_RETURN)
             {
                 num_failed++;
             }
@@ -62,4 +54,12 @@ static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
     }
     fclose(lat_fp);
     return 0;
+}
+
+int test_alloc_baseline_lat(ClientFMM &client)
+{
+    char out_fname[128];
+    int num_rep = client.get_num_rep();
+    sprintf(out_fname, "results/alloc_baseline_lat-%drp.txt", num_rep);
+    return test_lat(client, "BASELINE", out_fname);
 }
