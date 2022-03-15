@@ -274,6 +274,7 @@ private:
     void free_write_kv_sr_lists(IbvSrList *sr_list);
 
     void init_mm_req_ctx(MMReqCtx *req_ctx, char *operation);
+    void update_kv_header(KVLogHeader * kv_header, ClientMMAllocCtx * alloc_ctx);
 
     // public methods
 public:
