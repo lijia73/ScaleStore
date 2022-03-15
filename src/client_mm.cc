@@ -37,16 +37,16 @@ ClientMM::ClientMM(const struct GlobalConfig *conf, UDPNetworkManager *nm)
         // allocate initial blocks
         alloc_new_block_lock_.lock();
         is_allocing_new_block_ = true;
-        int ret;
-        if (conf->server_id - conf->memory_num == 0)
-        {
-            ret = init_get_new_block_from_server(nm);
-        }
-        else
-        {
-            ret = get_new_block_from_server(nm);
-        }
-        // int ret = get_new_block_from_server(nm);
+        // int ret;
+        // if (conf->server_id - conf->memory_num == 0)
+        // {
+        //     ret = init_get_new_block_from_server(nm);
+        // }
+        // else
+        // {
+        //     ret = get_new_block_from_server(nm);
+        // }
+        int ret = get_new_block_from_server(nm);
         // int ret = init_get_new_block_from_server(nm);
         alloc_new_block_lock_.unlock();
         // assert(ret == 0);
@@ -872,8 +872,11 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
     // n_dyn_req_ ++;
     int ret = 0;
 
+    int num_blocks_required = size / subblock_sz_;
+    assert(num_blocks_required == 1);
+
     assert(mm_blocks_.size() > 0);
-    ClientMMBlock* alloc_block = mm_blocks_.front();
+    ClientMMBlock *alloc_block = mm_blocks_.front();
     mm_blocks_.pop();
 
     if (mm_blocks_.size() == 0)
@@ -886,7 +889,7 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
         }
     }
 
-    ClientMMBlock* next_block = mm_blocks_.front();
+    ClientMMBlock *next_block = mm_blocks_.front();
 
     for (int i = 0; i < num_replication_; i++)
     {
@@ -894,7 +897,7 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
         ctx->rkey_list[i] = alloc_block->rkey_list[i];
         ctx->server_id_list[i] = alloc_block->server_id_list[i];
 
-        ctx->next_addr_list[i] =  next_block->addr_list[i];
+        ctx->next_addr_list[i] = next_block->addr_list[i];
         ctx->next_addr_list[i] |= next_block->server_id_list[i];
 
         ctx->prev_addr_list[i] = last_allocated_info_base_->addr_list[i];
