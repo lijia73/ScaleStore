@@ -19,6 +19,9 @@
 #include "ib.h"
 #include "kv_debug.h"
 
+#define CLINET_INPUT_BUF_LEN (512 * 1024 * 1024)
+#define CORO_LOCAL_BUF_LEN (32 * 1024 * 1024)
+
 enum MMRequestType
 {
     MM_REQ_BASELINE,
@@ -42,6 +45,9 @@ typedef struct TagMMReqCtx
     uint32_t size_;
 
     ClientMMAllocCtx mm_alloc_ctx;
+
+    bool is_finished;
+    int ret_code;
 
 } MMReqCtx;
 
@@ -264,6 +270,9 @@ private:
     int write_client_meta_info();
     int init_hash_table();
 
+    IbvSrList *gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info, __OUT uint32_t *num_sr_lists);
+    void free_write_kv_sr_lists(IbvSrList *sr_list);
+
     void init_mm_req_ctx(MMReqCtx *req_ctx, char *operation);
 
     // public methods
@@ -275,7 +284,7 @@ public:
 
     int load_seq_mm_requests(uint32_t num_ops, char *op_type);
 
-    KVInfo   * kv_info_list_;
+    KVInfo *kv_info_list_;
     MMReqCtx *mm_req_ctx_list_;
     uint32_t num_total_operations_;
     uint32_t num_local_operations_;

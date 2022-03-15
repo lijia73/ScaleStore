@@ -16,7 +16,6 @@
 
 ClientFMM::ClientFMM(const struct GlobalConfig *conf)
 {
-    gettimeofday(&recover_st_, NULL);
     num_idx_rep_ = conf->num_idx_rep;
     num_replication_ = conf->num_replication;
     remote_global_meta_addr_ = conf->server_base_addr;
@@ -33,7 +32,7 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
     num_total_operations_ = 0;
     num_local_operations_ = 0;
     kv_info_list_ = NULL;
-    kv_req_ctx_list_ = NULL;
+    mm_req_ctx_list_ = NULL;
 
     // bind core information
     main_core_id_ = conf->main_core_id;
@@ -191,6 +190,8 @@ void ClientFMM::update_kv_header(KVLogHeader *header, ClientMMAllocCtx *mm_alloc
 
 int ClientFMM::alloc_baseline(MMReqCtx *ctx)
 {
+    int ret = 0;
+    KVLogHeader *header = (KVLogHeader *)ctx->kv_info->l_addr;
     // 1. allocate remote memory
     uint32_t alloc_size = ctx->size_ + sizeof(KVLogHeader);
     mm_->mm_alloc_baseline(alloc_size, nm_, &ctx->mm_alloc_ctx);
@@ -217,7 +218,7 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
     return ctx->ret_code;
 }
 
-IbvSrList *Client::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info,
+IbvSrList *ClientFMM::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info,
                                          __OUT uint32_t *num_sr_lists)
 {
     IbvSrList *ret_sr_list = (IbvSrList *)malloc(sizeof(IbvSrList) * num_replication_);
@@ -262,8 +263,8 @@ void ClientFMM::free_write_kv_sr_lists(IbvSrList *sr_list)
 
 int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
 {
-    num_total_operations_ = num_keys;
-    num_local_operations_ = num_keys;
+    num_total_operations_ = num_ops;
+    num_local_operations_ = num_ops;
 
     if (kv_info_list_ != NULL)
     {
@@ -299,7 +300,7 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
 void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, char *operation)
 {
     req_ctx->coro_id = 0;
-    req_ctx->size = BASELINE_ALLOC_SIZE;
+    req_ctx->size_ = BASELINE_ALLOC_SIZE;
 
     if (strcmp(operation, "BASELINE") == 0)
     {
