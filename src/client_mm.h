@@ -106,6 +106,8 @@ private:
     std::queue<SubblockInfo> subblock_free_queue_;
     SubblockInfo last_allocated_info_;
 
+    ClientMMBlock* last_allocated_info_base_;
+
     std::map<std::string, std::queue<SubblockInfo>> allocated_subblock_key_map_;
 
     // uint32_t n_dyn_req_;
@@ -121,7 +123,7 @@ private:
                        UDPNetworkManager *nm, int reg_type);
     int dyn_get_new_block_from_server(UDPNetworkManager *nm);
     int get_new_block_from_server(UDPNetworkManager *nm);
-    int local_reg_blocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list);
+    int local_reg_subblocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list);
     int reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *server_id_list,
                       UDPNetworkManager *nm, int reg_type);
     int dyn_reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *server_id_list,

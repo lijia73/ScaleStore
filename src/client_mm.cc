@@ -106,6 +106,35 @@ int32_t ClientMM::dyn_get_new_block_from_server(UDPNetworkManager *nm)
     return 0;
 }
 
+int32_t ClientMM::dyn_get_new_block_from_server_baseline(UDPNetworkManager *nm)
+{
+    // n_dyn_req_ ++;
+    int ret = 0;
+    uint32_t my_server_id = nm->get_server_id();
+    uint32_t alloc_hint = get_alloc_hint_rr();
+    uint32_t pr_server_id = nm->get_one_server_id(alloc_hint);
+    uint32_t num_servers = nm->get_num_servers();
+
+    struct MrInfo mr_info_list[MAX_REP_NUM];
+    uint8_t server_id_list[MAX_REP_NUM];
+    for (int i = 0; i < num_replication_; i++)
+    {
+        uint32_t server_id = (pr_server_id + i) % num_servers;
+        server_id_list[i] = server_id;
+        ret = alloc_from_sid(server_id, nm, TYPE_KVBLOCK, &mr_info_list[i]);
+        // assert(ret == 0);
+    }
+
+    if (mr_info_list[0].addr == 0)
+    {
+        return -1;
+    }
+
+    ret = dyn_reg_new_space(mr_info_list, server_id_list, nm, TYPE_BASELINE);
+    // assert(ret == 0);
+    return 0;
+}
+
 int ClientMM::get_new_block_from_server(UDPNetworkManager *nm)
 {
     int ret = 0;
@@ -362,7 +391,7 @@ int ClientMM::alloc_from_sid(uint32_t server_id, UDPNetworkManager *nm, int allo
     return 0;
 }
 
-int ClientMM::local_reg_blocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list)
+int ClientMM::local_reg_subblocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list)
 {
     ClientMMBlock *new_mm_block = (ClientMMBlock *)malloc(sizeof(ClientMMBlock));
     memset(new_mm_block, 0, sizeof(ClientMMBlock));
@@ -387,6 +416,22 @@ int ClientMM::local_reg_blocks(const struct MrInfo *mr_info_list, const uint8_t 
             tmp_info.server_id_list[r] = new_mm_block->server_id_list[r];
         }
         subblock_free_queue_.push(tmp_info);
+    }
+
+    mm_blocks_.push_back(new_mm_block);
+
+    return 0;
+}
+
+int ClientMM::local_reg_blocks(const struct MrInfo *mr_info_list, const uint8_t *server_id_list)
+{
+    ClientMMBlock *new_mm_block = (ClientMMBlock *)malloc(sizeof(ClientMMBlock));
+    memset(new_mm_block, 0, sizeof(ClientMMBlock));
+
+    for (int i = 0; i < num_replication_; i++)
+    {
+        memcpy(&new_mm_block->mr_info_list[i], &mr_info_list[i], sizeof(struct MrInfo));
+        new_mm_block->server_id_list[i] = server_id_list[i];
     }
 
     mm_blocks_.push_back(new_mm_block);
@@ -430,8 +475,16 @@ int ClientMM::reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *se
     }
     client_meta_addr_ += sizeof(ClientMetaAddrInfo);
 
-    // locally register blocks
+    // locally register subblocks
     if (alloc_type == TYPE_KVBLOCK)
+    {
+        // print_log(DEBUG, "[%s] register locally", __FUNCTION__);
+        ret = local_reg_subblocks(mr_info_list, server_id_list);
+        // assert(ret == 0);
+    }
+
+    // locally register blocks
+    if (alloc_type == TYPE_BASELINE)
     {
         // print_log(DEBUG, "[%s] register locally", __FUNCTION__);
         ret = local_reg_blocks(mr_info_list, server_id_list);
@@ -544,13 +597,22 @@ int ClientMM::dyn_reg_new_space(const struct MrInfo *mr_info_list, const uint8_t
     }
     client_meta_addr_ += sizeof(ClientMetaAddrInfo);
 
-    // locally register blocks
+    // locally register subblocks
     if (alloc_type == TYPE_KVBLOCK)
+    {
+        // print_log(DEBUG, "[%s] register locally", __FUNCTION__);
+        ret = local_reg_subblocks(mr_info_list, server_id_list);
+        // assert(ret == 0);
+    }
+
+    // locally register blocks
+    if (alloc_type == TYPE_BASELINE)
     {
         // print_log(DEBUG, "[%s] register locally", __FUNCTION__);
         ret = local_reg_blocks(mr_info_list, server_id_list);
         // assert(ret == 0);
     }
+
     return 0;
 }
 
@@ -775,8 +837,7 @@ void ClientMM::get_time_bread_down(std::vector<struct timeval> &time_vec)
     time_vec.push_back(traverse_log_et_);
 }
 
-// memory management
-void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx)
+int32_t ClientMM::dyn_get_new_block_from_server(UDPNetworkManager *nm)
 {
     // n_dyn_req_ ++;
     int ret = 0;
@@ -791,34 +852,54 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
     {
         uint32_t server_id = (pr_server_id + i) % num_servers;
         server_id_list[i] = server_id;
-        ret = alloc_from_sid(server_id, nm, TYPE_BASELINE, &mr_info_list[i]);
+        ret = alloc_from_sid(server_id, nm, TYPE_KVBLOCK, &mr_info_list[i]);
         // assert(ret == 0);
     }
 
     if (mr_info_list[0].addr == 0)
     {
-        ctx->addr_list[0] = 0;
-        return;
+        return -1;
     }
 
-    ret = dyn_reg_new_space(mr_info_list, server_id_list, nm, TYPE_BASELINE);
+    ret = dyn_reg_new_space(mr_info_list, server_id_list, nm, TYPE_KVBLOCK);
     // assert(ret == 0);
+    return 0;
+}
+
+// memory management
+void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx)
+{
+    // n_dyn_req_ ++;
+    int ret = 0;
+
+    assert(mm_blocks_.size() > 0);
+    ClientMMBlock* alloc_block = mm_blocks_.front();
+    mm_blocks_.pop();
+
+    if (mm_blocks_.size() == 0)
+    {
+        ret = dyn_get_new_block_from_server_baseline(nm);
+        if (ret == -1)
+        {
+            ctx->addr_list[0] = 0;
+            return;
+        }
+    }
+
+    ClientMMBlock* next_block = mm_blocks_.front();
 
     for (int i = 0; i < num_replication_; i++)
     {
-        ctx->addr_list[i] = mr_info_list[i].addr;
-        ctx->rkey_list[i] = mr_info_list[i].rkey;
-        ctx->server_id_list[i] = server_id_list[i];
+        ctx->addr_list[i] = alloc_block->addr_list[i];
+        ctx->rkey_list[i] = alloc_block->rkey_list[i];
+        ctx->server_id_list[i] = alloc_block->server_id_list[i];
+
+        ctx->next_addr_list[i] =  next_block->addr_list[i];
+        ctx->next_addr_list[i] |= next_block->server_id_list[i];
+
+        ctx->prev_addr_list[i] = last_allocated_info_base_->addr_list[i];
+        ctx->prev_addr_list[i] |= last_allocated_info_base_->server_id_list[i];
     }
 
-    ClientMMBlock *new_mm_block = (ClientMMBlock *)malloc(sizeof(ClientMMBlock));
-    memset(new_mm_block, 0, sizeof(ClientMMBlock));
-
-    for (int i = 0; i < num_replication_; i++)
-    {
-        memcpy(&new_mm_block->mr_info_list[i], &mr_info_list[i], sizeof(struct MrInfo));
-        new_mm_block->server_id_list[i] = server_id_list[i];
-    }
-
-    mm_blocks_.push_back(new_mm_block);
+    last_allocated_info_base_ = alloc_block;
 }
