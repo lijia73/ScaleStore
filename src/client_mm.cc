@@ -864,14 +864,14 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
 
     for (int i = 0; i < num_replication_; i++)
     {
-        ctx->addr_list[i] = alloc_block->addr_list[i];
-        ctx->rkey_list[i] = alloc_block->rkey_list[i];
+        ctx->addr_list[i] = alloc_block->mr_info_list[i]->addr;
+        ctx->rkey_list[i] = alloc_block->mr_info_list[i]->rkey;
         ctx->server_id_list[i] = alloc_block->server_id_list[i];
 
-        ctx->next_addr_list[i] = next_block->addr_list[i];
+        ctx->next_addr_list[i] = next_block->mr_info_list[i]->addr;
         ctx->next_addr_list[i] |= next_block->server_id_list[i];
 
-        ctx->prev_addr_list[i] = last_allocated_info_base_->addr_list[i];
+        ctx->prev_addr_list[i] = last_allocated_info_base_->mr_info_list[i]->addr;
         ctx->prev_addr_list[i] |= last_allocated_info_base_->server_id_list[i];
     }
 
