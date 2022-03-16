@@ -46,6 +46,7 @@ typedef struct TagMMReqCtx
 
     ClientMMAllocCtx mm_alloc_ctx;
 
+    //return 
     bool is_finished;
     union
     {
@@ -277,7 +278,7 @@ private:
     IbvSrList *gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info, __OUT uint32_t *num_sr_lists);
     void free_write_kv_sr_lists(IbvSrList *sr_list);
 
-    void init_mm_req_ctx(MMReqCtx *req_ctx, char *operation);
+    void init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation);
     void update_kv_header(KVLogHeader *kv_header, ClientMMAllocCtx *alloc_ctx);
 
     // public methods

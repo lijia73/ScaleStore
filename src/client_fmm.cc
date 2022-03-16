@@ -13,7 +13,6 @@
 #include "kv_debug.h"
 
 #define WRITE_KV_ST_WRID 200
-#define BASELINE_ALLOC_SIZE 1024
 
 ClientFMM::ClientFMM(const struct GlobalConfig *conf)
 {
@@ -265,27 +264,29 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
     memset(kv_info_list_, 0, sizeof(KVInfo) * num_local_operations_);
 
     mm_req_ctx_list_ = new MMReqCtx[num_local_operations_];
-    assert(kv_req_ctx_list_ != NULL);
+    assert(mm_req_ctx_list_ != NULL);
 
     uint64_t input_buf_ptr = (uint64_t)input_buf_;
 
     for (int i = 0; i < num_local_operations_; i++)
     {
-        uint32_t all_len = BASELINE_ALLOC_SIZE;
-        kv_info_list_[i].l_addr = (void *)input_buf_ptr;
+        uint32_t all_len = mm_->mm_block_sz_;
+        mm_->mm_block_sz_;[i].l_addr = (void *)input_buf_ptr;
         kv_info_list_[i].lkey = input_buf_mr_->lkey;
 
         KVLogHeader *kv_log_header = (KVLogHeader *)input_buf_ptr;
         kv_log_header->ctl_bits = KV_LOG_VALID;
         input_buf_ptr += all_len;
 
-        init_mm_req_ctx(&mm_req_ctx_list_[i], op_type);
+        init_mm_req_ctx(&mm_req_ctx_list_[i], &kv_info_list_[i], op_type);
     }
 }
-void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, char *operation)
+void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo * kv_info, char *operation)
 {
     req_ctx->coro_id = 0;
-    req_ctx->size_ = BASELINE_ALLOC_SIZE;
+    req_ctx->size_ = mm_->mm_block_sz_;;
+
+    req_ctx->kv_info = kv_info;
 
     if (strcmp(operation, "BASELINE") == 0)
     {
