@@ -289,6 +289,8 @@ public:
 
     int load_seq_mm_requests(uint32_t num_ops, char *op_type);
 
+    int get_num_rep();
+
     KVInfo *kv_info_list_;
     MMReqCtx *mm_req_ctx_list_;
     uint32_t num_total_operations_;
