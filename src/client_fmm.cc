@@ -199,8 +199,8 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
     if (ctx->mm_alloc_ctx.addr_list[0] < server_st_addr_ || ctx->mm_alloc_ctx.addr_list[0] >= server_st_addr_ + server_data_len_)
     {
         ctx->is_finished = true;
-        ctx->ret_code = MM_OPS_FAIL_RETURN;
-        return ctx->ret_code;
+        ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
+        return ctx->ret_val.ret_code;
     }
 
     // 2. update kv header
@@ -216,7 +216,7 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
     free_write_kv_sr_lists(write_kv_sr_list);
 
     ctx->is_finished = true;
-    return ctx->ret_val->ret_code;
+    return ctx->ret_val.ret_code;
 }
 
 IbvSrList *ClientFMM::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info,
