@@ -31,7 +31,7 @@ int main(int argc, char **argv)
         }
     }
 
-    Client client(&config);
+    ClientFMM client(&config);
 
     ret = test_alloc_baseline_lat(client);
     assert(ret == 0);
