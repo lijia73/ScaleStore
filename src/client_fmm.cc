@@ -12,7 +12,7 @@
 
 #include "kv_debug.h"
 
-#define WRITE_KV_ST_WRID    200
+#define WRITE_KV_ST_WRID 200
 #define BASELINE_ALLOC_SIZE 1024
 
 ClientFMM::ClientFMM(const struct GlobalConfig *conf)
@@ -94,26 +94,10 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
     // get root
     ret = get_race_root();
     // kv_assert(ret == 0);
-
-    if (my_server_id_ - conf->memory_num == 0)
-    {
-        // init table
-        ret = init_hash_table();
-        // kv_assert(ret == 0);
-
-        ret = sync_init_finish();
-        // kv_assert(ret == 0);
-
-        ret = get_race_root();
-        // kv_assert(ret == 0);
-    }
-    else
-    {
-        while (!init_is_finished())
-            ;
-        ret = get_race_root();
-        // kv_assert(ret == 0);
-    }
+    while (!init_is_finished())
+        ;
+    ret = get_race_root();
+    // kv_assert(ret == 0);
 }
 
 ClientFMM::~ClientFMM()
@@ -220,7 +204,7 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
 }
 
 IbvSrList *ClientFMM::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info, ClientMMAllocCtx *r_mm_info,
-                                         __OUT uint32_t *num_sr_lists)
+                                            __OUT uint32_t *num_sr_lists)
 {
     IbvSrList *ret_sr_list = (IbvSrList *)malloc(sizeof(IbvSrList) * num_replication_);
     struct ibv_send_wr *sr = (struct ibv_send_wr *)malloc(sizeof(struct ibv_send_wr) * num_replication_);
@@ -313,6 +297,7 @@ void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, char *operation)
     }
 }
 
-int ClientFMM::get_num_rep() {
+int ClientFMM::get_num_rep()
+{
     return num_replication_;
 }
