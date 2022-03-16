@@ -271,7 +271,7 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
     for (int i = 0; i < num_local_operations_; i++)
     {
         uint32_t all_len = mm_->mm_block_sz_;
-        mm_->mm_block_sz_;[i].l_addr = (void *)input_buf_ptr;
+        kv_info_list_[i].l_addr = (void *)input_buf_ptr;
         kv_info_list_[i].lkey = input_buf_mr_->lkey;
 
         KVLogHeader *kv_log_header = (KVLogHeader *)input_buf_ptr;
