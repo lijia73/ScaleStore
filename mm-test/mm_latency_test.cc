@@ -30,7 +30,7 @@ static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
         {
         case MM_REQ_BASELINE:
             gettimeofday(&st, NULL);
-            client.alloc_baseline(ctx);
+            ret = client.alloc_baseline(ctx);
             gettimeofday(&et, NULL);
             if (ret == MM_OPS_FAIL_RETURN)
             {

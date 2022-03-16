@@ -189,7 +189,7 @@ void ClientFMM::update_kv_header(KVLogHeader *header, ClientMMAllocCtx *mm_alloc
     header->prev_addr = mm_alloc_ctx->prev_addr_list[0];
 }
 
-void ClientFMM::alloc_baseline(MMReqCtx *ctx)
+int ClientFMM::alloc_baseline(MMReqCtx *ctx)
 {
     int ret = 0;
     KVLogHeader *header = (KVLogHeader *)ctx->kv_info->l_addr;
