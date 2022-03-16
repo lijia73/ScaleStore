@@ -7,7 +7,7 @@
 
 #define WORKLOAD_ALL (-1)
 // #define WORKLOAD_NUM WORKLOAD_ALL
-#define WORKLOAD_NUM 100000
+#define WORKLOAD_NUM 10000
 
 static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
 {
