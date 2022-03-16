@@ -5,8 +5,10 @@
 
 #include "server.h"
 
-int main(int argc, char ** argv) {
-    if (argc != 2) {
+int main(int argc, char **argv)
+{
+    if (argc != 2)
+    {
         printf("Usage: %s [server_id]\n", argv[0]);
         return -1;
     }
@@ -19,7 +21,7 @@ int main(int argc, char ** argv) {
     server_conf.server_id = server_id;
 
     printf("===== Starting Server %d =====\n", server_conf.server_id);
-    Server * server = new Server(&server_conf);
+    Server *server = new Server(&server_conf);
     ServerMainArgs server_main_args;
     server_main_args.server = server;
     server_main_args.core_id = server_conf.main_core_id;
@@ -28,9 +30,9 @@ int main(int argc, char ** argv) {
     pthread_create(&server_tid, NULL, server_main, (void *)&server_main_args);
 
     printf("press to exit\n");
-    // getchar();
+    getchar();
     printf("===== Ending Server %d =====\n", server_conf.server_id);
-    sleep(100000000ll);
+    // sleep(100000000ll);
 
     server->stop();
     return 0;
