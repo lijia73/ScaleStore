@@ -148,6 +148,8 @@ private:
 
     void gen_subblock_info(ClientMMBlock *mm_block, uint32_t subblock_idx, __OUT SubblockInfo *subblock_info);
 
+    int free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
+    int free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, const uint32_t server_id);
     // inline private methods
 private:
     inline uint32_t get_alloc_hint_rr()
@@ -192,8 +194,8 @@ public:
 
     // memory management
     void mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
-    int mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
-    
+    void mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
+
     // inline public methods
 public:
     inline uint64_t get_remote_meta_ptr()

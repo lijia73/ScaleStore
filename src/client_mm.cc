@@ -878,8 +878,48 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
     last_allocated_info_base_ = alloc_block;
 }
 
-int mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx){
+int ClientMM::free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
+{
+    int ret = 0;
+    for (int i = 0; i < num_replication_; i++)
+    {
+        struct MrInfo mr_info;
+        mr_info.addr = addr_list[i];
+        mr_info.rkey = rkey_list[i];
 
+        ret = free_from_sid(nm, mr_info, server_id_list[i]);
+        if (ret == 0)
+        {
+            return -1;
+        }
+    }
 
     return 0;
+}
+
+int ClientMM::free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, const uint32_t server_id)
+{
+    struct KVMsg request, reply;
+    memset(&request, 0, sizeof(struct KVMsg));
+    memset(&reply, 0, sizeof(struct KVMsg));
+
+    request.id = nm->get_server_id();
+    request.type = REQ_FREE;
+    request.body.mr_info = mr_info;
+
+    serialize_kvmsg(&request);
+
+    int ret = nm->nm_send_udp_msg_to_server(&request, server_id);
+    // assert(ret == 0);
+    ret = nm->nm_recv_udp_msg(&reply, NULL, NULL);
+    //reply
+    return 0;
+}
+
+int ClientMM::mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
+{
+    int ret = 0;
+    ret = free_block_to_server(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+
+    return ret;
 }

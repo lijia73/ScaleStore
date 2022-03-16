@@ -93,6 +93,7 @@ enum KVMsgType {
     REQ_CONNECT,
     REQ_ALLOC,
     REQ_ALLOC_SUBTABLE,
+    REQ_FREE,
     REP_CONNECT,
     REP_ALLOC,
     REP_ALLOC_SUBTABLE,
@@ -101,7 +102,7 @@ enum KVMsgType {
     REQ_RECOVER,
     REP_RECOVER,
     REQ_HEARTBEAT,
-    REP_HEAETBEAT
+    REP_HEAETBEAT,
 };
 
 struct QpInfo {
