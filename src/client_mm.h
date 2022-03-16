@@ -192,7 +192,8 @@ public:
 
     // memory management
     void mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
-
+    int mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
+    
     // inline public methods
 public:
     inline uint64_t get_remote_meta_ptr()
