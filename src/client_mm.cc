@@ -847,8 +847,8 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
     assert(num_blocks_required == 1);
 
     assert(mm_blocks_.size() > 0);
-    ClientMMBlock *alloc_block = mm_blocks_.front();
-    mm_blocks_.pop_front();
+    ClientMMBlock *alloc_block = mm_blocks_.back();
+    mm_blocks_.pop_back();
 
     if (mm_blocks_.size() == 0)
     {
@@ -860,7 +860,7 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
         }
     }
 
-    ClientMMBlock *next_block = mm_blocks_.front();
+    ClientMMBlock *next_block = mm_blocks_.back();
 
     for (int i = 0; i < num_replication_; i++)
     {
