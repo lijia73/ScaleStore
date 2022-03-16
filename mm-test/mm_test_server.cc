@@ -30,9 +30,9 @@ int main(int argc, char **argv)
     pthread_create(&server_tid, NULL, server_main, (void *)&server_main_args);
 
     printf("press to exit\n");
-    getchar();
+    // getchar();
     printf("===== Ending Server %d =====\n", server_conf.server_id);
-    // sleep(100000000ll);
+    sleep(100000000ll);
 
     server->stop();
     return 0;
