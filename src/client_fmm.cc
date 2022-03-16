@@ -60,17 +60,17 @@ ClientFMM::ClientFMM(const struct GlobalConfig *conf)
     printf("allocating %ld\n", local_buf_sz);
     local_buf_ = mmap(NULL, local_buf_sz, PROT_READ | PROT_WRITE,
                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
-    // assert(local_buf_ != MAP_FAILED);
+    assert(local_buf_ != MAP_FAILED);
     local_buf_mr_ = ibv_reg_mr(ib_info.ib_pd, local_buf_, local_buf_sz,
                                IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ);
-    // print_log(DEBUG, "register mr addr(0x%lx) rkey(%x)", local_buf_mr_->addr, local_buf_mr_->rkey);
+    print_log(DEBUG, "register mr addr(0x%lx) rkey(%x)", local_buf_mr_->addr, local_buf_mr_->rkey);
 
     race_root_ = (RaceHashRoot *)malloc(sizeof(RaceHashRoot));
     // assert(race_root_ != NULL);
     race_root_mr_ = ibv_reg_mr(ib_info.ib_pd, race_root_, sizeof(RaceHashRoot),
                                IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ);
     // assert(race_root_mr_ != NULL);
-    // print_log(DEBUG, "register mr addr(0x%lx) rkey(%x)", race_root_mr_->addr, race_root_mr_->rkey);
+    print_log(DEBUG, "register mr addr(0x%lx) rkey(%x)", race_root_mr_->addr, race_root_mr_->rkey);
 
     input_buf_ = malloc(CLINET_INPUT_BUF_LEN);
     // assert(input_buf_ != NULL);
@@ -281,10 +281,11 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
         init_mm_req_ctx(&mm_req_ctx_list_[i], &kv_info_list_[i], op_type);
     }
 }
-void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo * kv_info, char *operation)
+void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation)
 {
     req_ctx->coro_id = 0;
-    req_ctx->size_ = mm_->mm_block_sz_;;
+    req_ctx->size_ = mm_->mm_block_sz_;
+    ;
 
     req_ctx->kv_info = kv_info;
 
