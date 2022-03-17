@@ -130,7 +130,7 @@ int32_t ClientMM::dyn_get_new_block_from_server_baseline(UDPNetworkManager *nm)
         return -1;
     }
 
-    ret = dyn_reg_new_space(mr_info_list, server_id_list, nm, TYPE_BASELINE);
+    ret = local_reg_blocks(mr_info_list, server_id_list);
     // assert(ret == 0);
     return 0;
 }
