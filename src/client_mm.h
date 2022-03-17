@@ -194,7 +194,7 @@ public:
 
     // memory management
     void mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
-    void mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
+    int mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
 
     // inline public methods
 public:
