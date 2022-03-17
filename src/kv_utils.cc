@@ -50,6 +50,8 @@ void deserialize_kvmsg(__OUT struct KVMsg * kvmsg) {
         break;
     case REQ_ALLOC:
     case REP_ALLOC:
+    case REQ_FREE:
+    case REP_FREE:
     case REQ_ALLOC_SUBTABLE:
     case REP_ALLOC_SUBTABLE:
         deserialize_mr_info(&kvmsg->body.mr_info);

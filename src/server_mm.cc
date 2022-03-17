@@ -88,7 +88,7 @@ int ServerMM::mm_free(uint64_t st_addr) {
     if (this->block_map_[st_addr]->free != 0)
         return -1;
     this->block_map_[st_addr]->free = 1;
-    
+    this->num_free_blocks_++;
     return 0;
 }
 

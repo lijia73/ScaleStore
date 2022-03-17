@@ -888,7 +888,7 @@ int ClientMM::free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, u
         mr_info.rkey = rkey_list[i];
 
         ret = free_from_sid(nm, mr_info, server_id_list[i]);
-        if (ret == 0)
+        if (ret != 0)
         {
             return -1;
         }
@@ -912,7 +912,12 @@ int ClientMM::free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, 
     int ret = nm->nm_send_udp_msg_to_server(&request, server_id);
     // assert(ret == 0);
     ret = nm->nm_recv_udp_msg(&reply, NULL, NULL);
-    //reply
+    // reply
+    deserialize_kvmsg(&reply);
+    if (reply.body.mr_info.addr != 0)
+    {
+        return -1;
+    }
     return 0;
 }
 

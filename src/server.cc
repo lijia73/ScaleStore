@@ -88,6 +88,29 @@ int Server::server_on_alloc(const struct KVMsg * request, struct sockaddr_in * s
     return 0;
 }
 
+int Server::server_on_free(const struct KVMsg * request, struct sockaddr_in * src_addr, 
+        socklen_t src_addr_len) {
+    int ret = 0;
+    ret = mm_->mm_free(request.body.mr_info.addr);
+    // assert(mmblock != NULL);
+    // print_log(DEBUG, "allocated addr: %lx", mmblock->addr);
+    // assert((mmblock->addr & 0x3FFFFFF) == 0);
+
+    struct KVMsg reply;
+    memset(&reply, 0, sizeof(struct KVMsg));
+    reply.type = REP_FREE;
+    reply.id   = nm_->get_server_id();
+    if (ret != 0) {
+        reply.body.mr_info.addr = request.body.mr_info.addr;
+    }
+    serialize_kvmsg(&reply);
+
+    ret = nm_->nm_send_udp_msg(&reply, src_addr, src_addr_len);
+    // assert(ret == 0);
+
+    return 0;
+}
+
 int Server::server_on_alloc_subtable(const struct KVMsg * request, struct sockaddr_in * src_addr,
         socklen_t src_addr_len) {
     uint64_t subtable_addr = mm_->mm_alloc_subtable();
@@ -127,6 +150,9 @@ void * Server::thread_main() {
             // assert(rc == 0);
         } else if (request.type == REQ_ALLOC_SUBTABLE) {
             rc = server_on_alloc_subtable(&request, &client_addr, client_addr_len);
+            // assert(rc == 0);
+        } else if (request.type == REQ_FREE) {
+            rc = server_on_free(&request, &client_addr, client_addr_len);
             // assert(rc == 0);
         } else {
             // assert(request.type == REQ_ALLOC);
