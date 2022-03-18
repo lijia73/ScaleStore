@@ -121,7 +121,7 @@ int32_t ClientMM::dyn_get_new_block_from_server_baseline(UDPNetworkManager *nm)
     {
         uint32_t server_id = (pr_server_id + i) % num_servers;
         server_id_list[i] = server_id;
-        ret = alloc_from_sid(server_id, nm, TYPE_KVBLOCK, &mr_info_list[i]);
+        ret = alloc_from_sid(server_id, nm, TYPE_BASELINE, &mr_info_list[i]);
         // assert(ret == 0);
     }
 
