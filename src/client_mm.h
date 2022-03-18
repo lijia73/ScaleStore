@@ -106,7 +106,7 @@ private:
     std::queue<SubblockInfo> subblock_free_queue_;
     SubblockInfo last_allocated_info_;
 
-    ClientMMBlock *last_allocated_info_base_;
+    ClientMMBlock last_allocated_info_base_;
 
     std::map<std::string, std::queue<SubblockInfo>> allocated_subblock_key_map_;
 
