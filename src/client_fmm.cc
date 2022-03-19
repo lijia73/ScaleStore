@@ -310,7 +310,7 @@ int ClientFMM::free_baseline(MMReqCtx *ctx)
         ctx->is_finished = true;
         ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
         return ctx->ret_val.ret_code;
-    })
+    }
 
     // 2. generate write header send requests
     uint32_t write_kv_sr_list_num;
