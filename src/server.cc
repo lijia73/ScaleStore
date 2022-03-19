@@ -91,19 +91,18 @@ int Server::server_on_alloc(const struct KVMsg * request, struct sockaddr_in * s
 int Server::server_on_free(const struct KVMsg * request, struct sockaddr_in * src_addr, 
         socklen_t src_addr_len) {
     int ret = 0;
-    printf("llu\n",request->body.mr_info.addr);
+    printf("%llu\n",request->body.mr_info.addr);
     ret = mm_->mm_free(request->body.mr_info.addr);
-    // assert(mmblock != NULL);
-    // print_log(DEBUG, "allocated addr: %lx", mmblock->addr);
-    // assert((mmblock->addr & 0x3FFFFFF) == 0);
 
     struct KVMsg reply;
     memset(&reply, 0, sizeof(struct KVMsg));
     reply.type = REP_FREE;
     reply.id   = nm_->get_server_id();
+
     if (ret != 0) {
         reply.body.mr_info.addr = request->body.mr_info.addr;
     }
+
     serialize_kvmsg(&reply);
 
     ret = nm_->nm_send_udp_msg(&reply, src_addr, src_addr_len);
