@@ -232,38 +232,40 @@ void ClientFMM::free_write_kv_sr_lists(IbvSrList *sr_list)
 
 int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
 {
-    num_total_operations_ = num_ops;
-    num_local_operations_ = num_ops;
-
-    if (kv_info_list_ != NULL)
+    if (strcmp(operation, "ALLOC_BASELINE") == 0)
     {
-        free(kv_info_list_);
-    }
+        num_total_operations_ = num_ops;
+        num_local_operations_ = num_ops;
+        if (kv_info_list_ != NULL)
+        {
+            free(kv_info_list_);
+        }
 
-    if (mm_req_ctx_list_ != NULL)
-    {
-        delete[] mm_req_ctx_list_;
-    }
-    kv_info_list_ = (KVInfo *)malloc(sizeof(KVInfo) * num_local_operations_);
-    assert(kv_info_list_ != NULL);
-    memset(kv_info_list_, 0, sizeof(KVInfo) * num_local_operations_);
+        if (mm_req_ctx_list_ != NULL)
+        {
+            delete[] mm_req_ctx_list_;
+        }
+        kv_info_list_ = (KVInfo *)malloc(sizeof(KVInfo) * num_local_operations_);
+        assert(kv_info_list_ != NULL);
+        memset(kv_info_list_, 0, sizeof(KVInfo) * num_local_operations_);
 
-    mm_req_ctx_list_ = new MMReqCtx[num_local_operations_];
-    assert(mm_req_ctx_list_ != NULL);
+        mm_req_ctx_list_ = new MMReqCtx[num_local_operations_];
+        assert(mm_req_ctx_list_ != NULL);
 
-    uint64_t input_buf_ptr = (uint64_t)input_buf_;
+        uint64_t input_buf_ptr = (uint64_t)input_buf_;
 
-    for (int i = 0; i < num_local_operations_; i++)
-    {
-        uint32_t all_len = mm_->mm_block_sz_;
-        kv_info_list_[i].l_addr = (void *)input_buf_ptr;
-        kv_info_list_[i].lkey = input_buf_mr_->lkey;
+        for (int i = 0; i < num_local_operations_; i++)
+        {
+            uint32_t all_len = mm_->mm_block_sz_;
+            kv_info_list_[i].l_addr = (void *)input_buf_ptr;
+            kv_info_list_[i].lkey = input_buf_mr_->lkey;
 
-        KVLogHeader *kv_log_header = (KVLogHeader *)input_buf_ptr;
-        kv_log_header->ctl_bits = KV_LOG_VALID;
-        input_buf_ptr += all_len;
+            KVLogHeader *kv_log_header = (KVLogHeader *)input_buf_ptr;
+            kv_log_header->ctl_bits = KV_LOG_VALID;
+            input_buf_ptr += all_len;
 
-        init_mm_req_ctx(&mm_req_ctx_list_[i], &kv_info_list_[i], op_type);
+            init_mm_req_ctx(&mm_req_ctx_list_[i], &kv_info_list_[i], op_type);
+        }
     }
 }
 void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation)
