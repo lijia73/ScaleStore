@@ -254,11 +254,11 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
         kv_info_list_[i].lkey = input_buf_mr_->lkey;
 
         KVLogHeader *kv_log_header = (KVLogHeader *)input_buf_ptr;
-        if (strcmp(operation, "ALLOC_BASELINE") == 0)
+        if (strcmp(op_type, "ALLOC_BASELINE") == 0 || strcmp(op_type, "ALLOC_IMPROVEMENT") == 0)
         {
             kv_log_header->ctl_bits = KV_LOG_VALID;
         }
-        else if (strcmp(operation, "FREE_BASELINE") == 0)
+        else if (strcmp(op_type, "FREE_BASELINE") == 0 || strcmp(operation, "FREE_IMPROVEMENT") == 0)
         {
             kv_log_header->ctl_bits = KV_LOG_GC;
         }
