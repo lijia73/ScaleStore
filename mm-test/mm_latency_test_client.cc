@@ -35,4 +35,7 @@ int main(int argc, char **argv)
 
     ret = test_alloc_baseline_lat(client);
     assert(ret == 0);
+
+    ret = test_free_baseline_lat(client);
+    assert(ret == 0);
 }
