@@ -232,7 +232,7 @@ void ClientFMM::free_write_kv_sr_lists(IbvSrList *sr_list)
 
 int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
 {
-    if (strcmp(operation, "ALLOC_BASELINE") == 0)
+    if (strcmp(op_type, "ALLOC_BASELINE") == 0)
     {
         num_total_operations_ = num_ops;
         num_local_operations_ = num_ops;
