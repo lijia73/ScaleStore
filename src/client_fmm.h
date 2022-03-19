@@ -289,7 +289,7 @@ public:
     ~ClientFMM();
 
     int alloc_baseline(MMReqCtx *ctx);
-    int free_baseline(MMReqCtx *ctx)
+    int free_baseline(MMReqCtx *ctx);
 
     int load_seq_mm_requests(uint32_t num_ops, char *op_type);
 
