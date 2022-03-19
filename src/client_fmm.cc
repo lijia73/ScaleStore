@@ -258,7 +258,7 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
         {
             kv_log_header->ctl_bits = KV_LOG_VALID;
         }
-        else if (strcmp(op_type, "FREE_BASELINE") == 0 || strcmp(operation, "FREE_IMPROVEMENT") == 0)
+        else if (strcmp(op_type, "FREE_BASELINE") == 0 || strcmp(op_type, "FREE_IMPROVEMENT") == 0)
         {
             kv_log_header->ctl_bits = KV_LOG_GC;
         }
