@@ -24,8 +24,10 @@
 
 enum MMRequestType
 {
-    MM_REQ_BASELINE,
-    MM_REQ_IMPROVEMENT,
+    MM_REQ_ALLOC_BASELINE,
+    MM_REQ_ALLOC_IMPROVEMENT,
+    MM_REQ_FREE_BASELINE,
+    MM_REQ_FREE_IMPROVEMENT
 };
 
 enum MMOpsRetCode
@@ -46,7 +48,7 @@ typedef struct TagMMReqCtx
 
     ClientMMAllocCtx mm_alloc_ctx;
 
-    //return 
+    // return
     bool is_finished;
     union
     {
@@ -287,6 +289,7 @@ public:
     ~ClientFMM();
 
     int alloc_baseline(MMReqCtx *ctx);
+    int free_baseline(MMReqCtx *ctx)
 
     int load_seq_mm_requests(uint32_t num_ops, char *op_type);
 

@@ -925,6 +925,5 @@ int ClientMM::mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
 {
     int ret = 0;
     ret = free_block_to_server(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
-
     return ret;
 }

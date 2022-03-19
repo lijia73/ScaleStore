@@ -28,9 +28,18 @@ static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
 
         switch (ctx->req_type)
         {
-        case MM_REQ_BASELINE:
+        case MM_REQ_ALLOC_BASELINE:
             gettimeofday(&st, NULL);
             ret = client.alloc_baseline(ctx);
+            gettimeofday(&et, NULL);
+            if (ret == MM_OPS_FAIL_RETURN)
+            {
+                num_failed++;
+            }
+            break;
+        case MM_REQ_FREE_BASELINE:
+            gettimeofday(&st, NULL);
+            ret = client.free_baseline(ctx);
             gettimeofday(&et, NULL);
             if (ret == MM_OPS_FAIL_RETURN)
             {
@@ -61,5 +70,13 @@ int test_alloc_baseline_lat(ClientFMM &client)
     char out_fname[128];
     int num_rep = client.get_num_rep();
     sprintf(out_fname, "results/alloc_baseline_lat-%drp.txt", num_rep);
-    return test_lat(client, "BASELINE", out_fname);
+    return test_lat(client, "ALLOC_BASELINE", out_fname);
+}
+
+int test_free_baseline_lat(ClientFMM &client)
+{
+    char out_fname[128];
+    int num_rep = client.get_num_rep();
+    sprintf(out_fname, "results/free_baseline_lat-%drp.txt", num_rep);
+    return test_lat(client, "FREE_BASELINE", out_fname);
 }
