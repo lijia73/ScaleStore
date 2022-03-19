@@ -5,4 +5,6 @@
 #include "client_fmm.h"
 
 int test_alloc_baseline_lat(ClientFMM & client);
+int test_free_baseline_lat(ClientFMM & client);
+
 #endif
