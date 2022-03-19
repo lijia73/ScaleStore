@@ -304,13 +304,13 @@ int ClientFMM::free_baseline(MMReqCtx *ctx)
     header->ctl_bits = KV_LOG_GC;
     // 1. free remote memory
     uint32_t alloc_size = ctx->size_ + sizeof(KVLogHeader);
-    mm_->mm_free_baseline(nm_, &ctx->mm_alloc_ctx);
-    if (ctx->mm_alloc_ctx.addr_list[0] < server_st_addr_ || ctx->mm_alloc_ctx.addr_list[0] >= server_st_addr_ + server_data_len_)
+    ret = mm_->mm_free_baseline(nm_, &ctx->mm_alloc_ctx);
+    if (ret != 0)
     {
         ctx->is_finished = true;
         ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
         return ctx->ret_val.ret_code;
-    }
+    })
 
     // 2. generate write header send requests
     uint32_t write_kv_sr_list_num;

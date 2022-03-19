@@ -80,3 +80,19 @@ int test_free_baseline_lat(ClientFMM &client)
     sprintf(out_fname, "results/free_baseline_lat-%drp.txt", num_rep);
     return test_lat(client, "FREE_BASELINE", out_fname);
 }
+
+int test_alloc_improvement_lat(ClientFMM &client)
+{
+    char out_fname[128];
+    int num_rep = client.get_num_rep();
+    sprintf(out_fname, "results/alloc_improvement_lat-%drp.txt", num_rep);
+    return test_lat(client, "ALLOC_IMPROVEMENT", out_fname);
+}
+
+int test_free_improvement_lat(ClientFMM &client)
+{
+    char out_fname[128];
+    int num_rep = client.get_num_rep();
+    sprintf(out_fname, "results/free_improvement_lat-%drp.txt", num_rep);
+    return test_lat(client, "FREE_IMPROVEMENT", out_fname);
+}
