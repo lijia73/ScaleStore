@@ -49,7 +49,7 @@ typedef struct TagClientMMAllocCtx
     uint32_t num_subblocks;
     bool need_change_prev;
 
-    uint32_t size;
+    uint32_t size_;
 } ClientMMAllocCtx;
 
 typedef struct TagClientMMAllocSubtableCtx

@@ -842,9 +842,10 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
 {
     // n_dyn_req_ ++;
     int ret = 0;
-
     int num_blocks_required = size / mm_block_sz_;
     assert(num_blocks_required == 1);
+
+    ctx->size_ = size;
 
     assert(mm_blocks_.size() > 0);
     ClientMMBlock *alloc_block = mm_blocks_.back();

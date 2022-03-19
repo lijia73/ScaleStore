@@ -200,7 +200,7 @@ IbvSrList *ClientFMM::gen_write_kv_sr_lists(uint32_t coro_id, KVInfo *a_kv_info,
     {
         sge[i].addr = (uint64_t)a_kv_info->l_addr;
         // sge[i].length = r_mm_info->num_subblocks * mm_->subblock_sz_;
-        sge[i].length = mm_->mm_block_sz_;
+        sge[i].length = r_mm_info->size_;
         sge[i].lkey = a_kv_info->lkey;
 
         sr[i].wr_id = ib_gen_wr_id(coro_id, r_mm_info->server_id_list[i], WRITE_KV_ST_WRID, i + 1);
@@ -271,7 +271,7 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
 void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation)
 {
     req_ctx->coro_id = 0;
-    req_ctx->size_ = mm_->mm_block_sz_;
+    req_ctx->size_ = mm_->mm_block_sz_ - sizeof(KVLogHeader);
 
     req_ctx->kv_info = kv_info;
 
