@@ -182,6 +182,16 @@ typedef struct TagDecodedClientGCSlot {
     uint8_t  num_subblocks;
 } DecodedClientGCSlot;
 
+//uint32_t  num_subblocks;
+typedef struct TagClientGCAddrInfo {
+    uint8_t  server_id_list[MAX_REP_NUM];
+    uint64_t addr_list[MAX_REP_NUM];
+} //uint32_t  num_subblocks;
+typedef struct TagClientGCAddrInfo {
+    uint8_t  server_id_list[MAX_REP_NUM];
+    uint64_t addr_list[MAX_REP_NUM];
+} ClientGCAddrInfo;;
+
 static inline uint64_t roundup_256(uint64_t len) {
     if (len % 256 == 0) {
         return len;

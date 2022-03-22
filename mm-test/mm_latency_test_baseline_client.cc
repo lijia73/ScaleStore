@@ -33,9 +33,9 @@ int main(int argc, char **argv)
 
     ClientFMM client(&config);
 
-    ret = test_alloc_improvement_lat(client);
+    ret = test_alloc_baseline_lat(client);
     assert(ret == 0);
 
-    ret = test_free_improvement_lat(client);
+    ret = test_free_baseline_lat(client);
     assert(ret == 0);
 }

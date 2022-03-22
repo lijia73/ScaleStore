@@ -325,3 +325,93 @@ int ClientFMM::free_baseline(MMReqCtx *ctx)
     ctx->is_finished = true;
     return ctx->ret_val.ret_code;
 }
+
+int ClientFMM::alloc_improvement(MMReqCtx *ctx)
+{
+    int ret = 0;
+    KVLogHeader *header = (KVLogHeader *)ctx->kv_info->l_addr;
+    // 1. allocate remote memory
+    uint32_t alloc_size = ctx->size_ + sizeof(KVLogHeader);
+    mm_->mm_alloc_improvement(alloc_size, nm_, &ctx->mm_alloc_ctx);
+    if (ctx->mm_alloc_ctx.addr_list[0] < server_st_addr_ || ctx->mm_alloc_ctx.addr_list[0] >= server_st_addr_ + server_data_len_)
+    {
+        ctx->is_finished = true;
+        ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
+        return ctx->ret_val.ret_code;
+    }
+
+    // 2. update kv header
+    update_kv_header(header, &ctx->mm_alloc_ctx);
+
+    // 3. generate write header send requests
+    uint32_t write_kv_sr_list_num;
+    IbvSrList *write_kv_sr_list = gen_write_kv_sr_lists(ctx->coro_id, ctx->kv_info, &ctx->mm_alloc_ctx, &write_kv_sr_list_num);
+
+    // 4. post requests and wait for completion
+    struct ibv_wc wc;
+    ret = nm_->rdma_post_sr_lists_sync(write_kv_sr_list, write_kv_sr_list_num, &wc);
+    free_write_kv_sr_lists(write_kv_sr_list);
+
+    ctx->is_finished = true;
+    return ctx->ret_val.ret_code;
+}
+
+void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation)
+{
+    req_ctx->coro_id = 0;
+    req_ctx->size_ = mm_->mm_block_sz_ - sizeof(KVLogHeader);
+
+    req_ctx->kv_info = kv_info;
+
+    if (strcmp(operation, "ALLOC_BASELINE") == 0)
+    {
+        req_ctx->req_type = MM_REQ_ALLOC_BASELINE;
+    }
+    else if (strcmp(operation, "FREE_BASELINE") == 0)
+    {
+        req_ctx->req_type = MM_REQ_FREE_BASELINE;
+    }
+    else if (strcmp(operation, "ALLOC_IMPROVEMENT") == 0)
+    {
+        req_ctx->req_type = MM_REQ_FREE_BASELINE;
+    }
+    else if (strcmp(operation, "FREE_IMPROVEMENT") == 0)
+    {
+        req_ctx->req_type = MM_REQ_FREE_BASELINE;
+    }
+}
+
+int ClientFMM::get_num_rep()
+{
+    return num_replication_;
+}
+
+int ClientFMM::free_improvement(MMReqCtx *ctx)
+{
+    int ret = 0;
+    KVLogHeader *header = (KVLogHeader *)ctx->kv_info->l_addr;
+
+    header->ctl_bits = KV_LOG_GC;
+    // 1. free remote memory
+    uint32_t alloc_size = ctx->size_ + sizeof(KVLogHeader);
+    ret = mm_->mm_free_baseline(nm_, &ctx->mm_alloc_ctx);
+    if (ret != 0)
+    {
+        ctx->is_finished = true;
+        ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
+        return ctx->ret_val.ret_code;
+    }
+
+    // 2. generate write header send requests
+    uint32_t write_kv_sr_list_num;
+    IbvSrList *write_kv_sr_list = gen_write_kv_sr_lists(ctx->coro_id, ctx->kv_info, &ctx->mm_alloc_ctx, &write_kv_sr_list_num);
+
+    // 3. post requests and wait for completion
+    struct ibv_wc wc;
+    ret = nm_->rdma_post_sr_lists_sync(write_kv_sr_list, write_kv_sr_list_num, &wc);
+    free_write_kv_sr_lists(write_kv_sr_list);
+
+    ctx->is_finished = true;
+    return ctx->ret_val.ret_code;
+}
+

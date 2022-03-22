@@ -26,7 +26,7 @@
 // #define META_AREA_LEN         (128 * 1024 * 1024)
 #define META_AREA_LEN         (256 * 1024 * 1024)
 // #define GC_AREA_LEN           (128 * 1024 * 1024)
-#define GC_AREA_LEN           (0)
+#define GC_AREA_LEN           (256 * 1024 * 1024)
 #define HASH_AREA_LEN         (128 * 1024 * 1024)
 #define CLIENT_META_LEN       (1 * 1024 * 1024)
 #define CLIENT_GC_LEN         (1 * 1024 * 1024)

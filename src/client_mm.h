@@ -33,9 +33,7 @@ typedef struct TagClientMMBlock
 enum ClientAllocType
 {
     TYPE_SUBTABLE = 1,
-    TYPE_KVBLOCK = 2,
-    TYPE_BASELINE = 3,
-    TYPE_IMPROVEMENT = 4,
+    TYPE_KVBLOCK = 2
 };
 
 typedef struct TagClientMMAllocCtx
@@ -91,9 +89,14 @@ private:
 
     uint64_t client_meta_addr_;
     uint64_t client_gc_addr_;
+    uint64_t client_gc_nums_addr_;
 
     std::mutex alloc_new_block_lock_;
     bool is_allocing_new_block_;
+
+    // for gc
+    void *gc_buf_; 
+    struct ibv_mr *gc_mr_;
 
     // for recovery
     void *recover_buf_;
@@ -137,6 +140,8 @@ private:
 
     int mm_recovery(UDPNetworkManager *nm);
     int mm_recover_prepare_space(UDPNetworkManager *nm);
+    int mm_gc_prepare_space(UDPNetworkManager *nm);
+
     int get_remote_log_header(UDPNetworkManager *nm, uint8_t server_id, uint64_t r_addr,
                               KVLogHeader *local_addr);
     int mm_traverse_log(UDPNetworkManager *nm);
@@ -148,8 +153,10 @@ private:
 
     void gen_subblock_info(ClientMMBlock *mm_block, uint32_t subblock_idx, __OUT SubblockInfo *subblock_info);
 
-    int free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
+    int free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list);
     int free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, const uint32_t server_id);
+
+    int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list);
     // inline private methods
 private:
     inline uint32_t get_alloc_hint_rr()
@@ -195,6 +202,9 @@ public:
     // memory management
     void mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
     int mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
+
+    void mm_alloc_improvement(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
+    int mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
 
     // inline public methods
 public:

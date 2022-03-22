@@ -9,11 +9,14 @@
 
 #define REC_SPACE_SIZE (64 * 1024 * 1024)
 
+#define GC_REC_SPACE_SIZE (64 * 1024 * 1024)
+
 ClientMM::ClientMM(const struct GlobalConfig *conf, UDPNetworkManager *nm)
 {
     int ret = 0;
     client_meta_addr_ = conf->server_base_addr + CLIENT_META_LEN * (conf->server_id - conf->memory_num + 1) + sizeof(ClientLogMetaInfo);
-    client_gc_addr_ = conf->server_base_addr + META_AREA_LEN + CLIENT_GC_LEN * (conf->server_id - conf->memory_num + 1);
+    client_gc_nums_addr_ = conf->server_base_addr + META_AREA_LEN + CLIENT_GC_LEN * (conf->server_id - conf->memory_num + 1);
+    client_gc_addr_ = client_gc_nums_addr_ + sizeof(uint32_t);
 
     num_replication_ = conf->num_replication;
     num_idx_rep_ = conf->num_idx_rep;
@@ -31,6 +34,8 @@ ClientMM::ClientMM(const struct GlobalConfig *conf, UDPNetworkManager *nm)
 
     alloc_new_block_lock_.unlock();
     is_allocing_new_block_ = false;
+
+    ret = mm_gc_prepare_space(nm);
 
     if (conf->is_recovery == false)
     {
@@ -482,15 +487,6 @@ int ClientMM::reg_new_space(const struct MrInfo *mr_info_list, const uint8_t *se
         ret = local_reg_subblocks(mr_info_list, server_id_list);
         // assert(ret == 0);
     }
-
-    // locally register blocks
-    if (alloc_type == TYPE_BASELINE)
-    {
-        // print_log(DEBUG, "[%s] register locally", __FUNCTION__);
-        ret = local_reg_blocks(mr_info_list, server_id_list);
-        // assert(ret == 0);
-    }
-    return 0;
 }
 
 int ClientMM::init_reg_space(struct MrInfo mr_info_list[][MAX_REP_NUM], uint8_t server_id_list[][MAX_REP_NUM],
@@ -568,7 +564,7 @@ int ClientMM::dyn_reg_new_space(const struct MrInfo *mr_info_list, const uint8_t
 {
     int ret = 0;
     ClientMetaAddrInfo meta_info;
-    if (alloc_type == TYPE_KVBLOCK || alloc_type == TYPE_BASELINE)
+    if (alloc_type == TYPE_KVBLOCK)
     {
         meta_info.meta_info_type = TYPE_KVBLOCK;
     }
@@ -605,14 +601,6 @@ int ClientMM::dyn_reg_new_space(const struct MrInfo *mr_info_list, const uint8_t
         // assert(ret == 0);
     }
 
-    // locally register blocks
-    if (alloc_type == TYPE_BASELINE)
-    {
-        // print_log(DEBUG, "[%s] register locally", __FUNCTION__);
-        ret = local_reg_blocks(mr_info_list, server_id_list);
-        // assert(ret == 0);
-    }
-
     return 0;
 }
 
@@ -628,6 +616,19 @@ int ClientMM::mm_recover_prepare_space(UDPNetworkManager *nm)
     log_header_st_ptr_ = (void *)((uint64_t)recover_buf_ + CLIENT_META_LEN);
     return 0;
 }
+
+int ClientMM::mm_gc_prepare_space(UDPNetworkManager *nm)
+{
+    int ret = 0;
+    // print_log(DEBUG, "  [%s] 1. create recoer space and register mr", __FUNCTION__);
+    IbInfo ib_info;
+    nm->get_ib_info(&ib_info);
+    gc_buf_ = malloc(GC_REC_SPACE_SIZE);
+    gc_mr_ = ibv_reg_mr(ib_info.ib_pd, gc_buf_, GC_REC_SPACE_SIZE, IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ);
+    // assert(gc_mr_ != NULL);
+    return 0;
+}
+
 
 int ClientMM::mm_traverse_log(UDPNetworkManager *nm)
 {
@@ -879,14 +880,13 @@ void ClientMM::mm_alloc_baseline(size_t size, UDPNetworkManager *nm, __OUT Clien
     last_allocated_info_base_ = *alloc_block;
 }
 
-int ClientMM::free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
+int ClientMM::free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list)
 {
     int ret = 0;
     for (int i = 0; i < num_replication_; i++)
     {
         struct MrInfo mr_info;
         mr_info.addr = addr_list[i];
-        mr_info.rkey = rkey_list[i];
 
         ret = free_from_sid(nm, mr_info, server_id_list[i]);
         if (ret != 0)
@@ -925,6 +925,110 @@ int ClientMM::free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, 
 int ClientMM::mm_free_baseline(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
 {
     int ret = 0;
-    ret = free_block_to_server(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+    ret = free_block_to_server(nm, ctx->addr_list, ctx->server_id_list);
     return ret;
+}
+
+void ClientMM::mm_alloc_improvement(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx)
+{
+    // struct timeval st, et;
+    // gettimeofday(&st, NULL);
+    int ret = 0;
+    size_t aligned_size = get_aligned_size(size);
+    int num_subblocks_required = aligned_size / subblock_sz_;
+    assert(num_subblocks_required == 1);
+
+    assert(subblock_free_queue_.size() > 0);
+    SubblockInfo alloc_subblock = subblock_free_queue_.front();
+    subblock_free_queue_.pop();
+
+    if (subblock_free_queue_.size() == 0)
+    {
+        ret = dyn_get_new_block_from_server(nm);
+        if (ret == -1)
+        {
+            ctx->addr_list[0] = 0;
+            return;
+        }
+    }
+
+    SubblockInfo next_subblock = subblock_free_queue_.front();
+
+    ctx->need_change_prev = false;
+    ctx->num_subblocks = num_subblocks_required;
+    for (int i = 0; i < num_replication_; i++)
+    {
+        ctx->addr_list[i] = alloc_subblock.addr_list[i];
+        ctx->rkey_list[i] = alloc_subblock.rkey_list[i];
+        ctx->server_id_list[i] = alloc_subblock.server_id_list[i];
+
+        ctx->next_addr_list[i] = next_subblock.addr_list[i];
+        ctx->next_addr_list[i] |= next_subblock.server_id_list[i];
+
+        ctx->prev_addr_list[i] = last_allocated_info_.addr_list[i];
+        ctx->prev_addr_list[i] |= last_allocated_info_.server_id_list[i];
+        // print_log(DEBUG, "\t   [%s] allocating %lx on server(%d)", __FUNCTION__,
+        //     ctx->addr_list[i], ctx->server_id_list[i]);
+    }
+
+    last_allocated_info_ = alloc_subblock;
+}
+
+int ClientMM::mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
+{
+    int ret = 0;
+    ret = syn_gc_info(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+    return ret;
+}
+
+int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list)
+{
+    int ret = 0;
+    ClientGCAddrInfo gc_info;
+    // prepare gc info
+    // print_log(DEBUG, "[%s] prepare meta info", __FUNCTION__);
+    for (int i = 0; i < num_replication_; i++)
+    {
+        gc_info.server_id_list[i] = server_id_list[i];
+        gc_info.addr_list[i] = mr_info_list[i].addr;
+    }
+
+
+    int32_t gc_info_nums;
+
+    // get gc info num
+    uint32_t rkey = nm->get_server_rkey(0);
+    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_buf_->lkey, sizeof(uint32_t),
+                                    client_gc_nums_addr_, rkey, 0);
+    uint32_t num_subblocks = *(uint32_t *)gc_buf_;
+
+    // get gc info
+    uint32_t rkey = nm->get_server_rkey(0);
+    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_buf_->lkey, sizeof(uint32_t),
+                                    client_gc_addr_, rkey, 0);
+    ClientGCAddrInfo *gc_info_list = (ClientGCAddrInfo *)gc_buf_;
+    uint32_t num_log_entries = gc_addr_info_list.size();
+    
+
+
+
+    // update gc info num
+    for (int i = 0; i < num_replication_; i++)
+    {
+        uint32_t rkey = nm->get_server_rkey(i);
+        ret = nm->nm_rdma_write_inl_to_sid(&gc_info, sizeof(uint32_t),
+                                           client_gc_nums_addr_, rkey, i);
+        // assert(ret == 0);
+    }
+
+    // send gc info to remote
+    for (int i = 0; i < num_replication_; i++)
+    {
+        uint32_t rkey = nm->get_server_rkey(i);
+        ret = nm->nm_rdma_write_inl_to_sid(&gc_info, num_subblocks * sizeof(ClientGCAddrInfo),
+                                           client_gc_addr_, rkey, i);
+        // assert(ret == 0);
+    }
+    client_gc_addr_ += sizeof(ClientGCAddrInfo);
+
 }
