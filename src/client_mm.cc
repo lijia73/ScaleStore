@@ -361,6 +361,13 @@ void ClientMM::free_recover_buf()
     free(recover_buf_);
 }
 
+void ClientMM::free_gc_buf()
+{
+    ibv_dereg_mr(gc_mr_);
+    gc_info_list_.clear();
+    free(gc_buf_);
+}
+
 int ClientMM::alloc_from_sid(uint32_t server_id, UDPNetworkManager *nm, int alloc_type,
                              __OUT struct MrInfo *mr_info)
 {
@@ -424,7 +431,6 @@ int ClientMM::local_reg_subblocks(const struct MrInfo *mr_info_list, const uint8
     }
 
     mm_blocks_.push_back(new_mm_block);
-
     return 0;
 }
 
@@ -628,7 +634,6 @@ int ClientMM::mm_gc_prepare_space(UDPNetworkManager *nm)
     // assert(gc_mr_ != NULL);
     return 0;
 }
-
 
 int ClientMM::mm_traverse_log(UDPNetworkManager *nm)
 {
@@ -981,20 +986,48 @@ int ClientMM::mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
     return ret;
 }
 
-int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list)
+void ClientMM::init_gc_buf_()
+{
+    gc_info_list_.clear();
+    memset(gc_buf_, 0, GC_REC_SPACE_SIZE);
+}
+
+bool ClientMM::isbelongmine(uint64_t free_addr)
+{
+    for (int i = 0; i < mm_blocks_.size(); i++)
+    {
+        if (mr_info_list[i].mr_info_list[0].addr <= free_addr && mr_info_list[i].mr_info_list[0].addr + mm_block_sz_ > free_addr)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ClientMM::mm_free_local(uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
+{
+    SubblockInfo tmp_info;
+    for (int r = 0; r < num_replication_; r++)
+    {
+        tmp_info.addr_list[r] = addr_list[r];
+        tmp_info.rkey_list[r] = rkey_list[r];
+        tmp_info.server_id_list[r] = server_id_list[r];
+    }
+    subblock_free_queue_.push(tmp_info);
+}
+
+int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
 {
     int ret = 0;
-    ClientGCAddrInfo gc_info;
+    ClientGCAddrInfo gc_addr_info;
     // prepare gc info
     // print_log(DEBUG, "[%s] prepare meta info", __FUNCTION__);
     for (int i = 0; i < num_replication_; i++)
     {
-        gc_info.server_id_list[i] = server_id_list[i];
-        gc_info.addr_list[i] = mr_info_list[i].addr;
+        gc_addr_info.server_id_list[i] = server_id_list[i];
+        gc_addr_info.addr_list[i] = addr_list[i];
+        gc_addr_info.rkey_list[i] = rkey_list[i];
     }
-
-
-    int32_t gc_info_nums;
 
     // get gc info num
     uint32_t rkey = nm->get_server_rkey(0);
@@ -1002,33 +1035,64 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, const uint
                                     client_gc_nums_addr_, rkey, 0);
     uint32_t num_subblocks = *(uint32_t *)gc_buf_;
 
+    init_gc_buf_();
+
     // get gc info
-    uint32_t rkey = nm->get_server_rkey(0);
-    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_buf_->lkey, sizeof(uint32_t),
+    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_buf_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
                                     client_gc_addr_, rkey, 0);
-    ClientGCAddrInfo *gc_info_list = (ClientGCAddrInfo *)gc_buf_;
-    uint32_t num_log_entries = gc_addr_info_list.size();
-    
+    ClientGCAddrInfo *gc_info_ptr = (ClientGCAddrInfo *)gc_buf_;
 
+    bool isgcinfochange = false;
 
-
-    // update gc info num
-    for (int i = 0; i < num_replication_; i++)
+    for (int i = 0; i < num_subblocks; i++)
     {
-        uint32_t rkey = nm->get_server_rkey(i);
-        ret = nm->nm_rdma_write_inl_to_sid(&gc_info, sizeof(uint32_t),
-                                           client_gc_nums_addr_, rkey, i);
-        // assert(ret == 0);
+        uint64_t free_addr = gc_info_ptr->addr_list[0];
+        if (isbelongmine(free_addr))
+        {
+            isgcinfochange = true;
+            mm_free_local(gc_info_ptr->addr_list, gc_info_ptr->rkey_list, gc_info_ptr->server_id_list);
+        }
+        else
+        {
+            gc_info_list_.push_back(*gc_info_ptr)
+        }
+        gc_info_ptr += sizeof(ClientGCAddrInfo);
     }
 
-    // send gc info to remote
-    for (int i = 0; i < num_replication_; i++)
-    {
-        uint32_t rkey = nm->get_server_rkey(i);
-        ret = nm->nm_rdma_write_inl_to_sid(&gc_info, num_subblocks * sizeof(ClientGCAddrInfo),
-                                           client_gc_addr_, rkey, i);
-        // assert(ret == 0);
-    }
-    client_gc_addr_ += sizeof(ClientGCAddrInfo);
+    // process local gc info
+    uint64_t free_addr = gc_info.addr_list[0];
 
+    if (isbelongmine(free_addr))
+    {
+        mm_free_local(gc_addr_info.addr_list, gc_addr_info.rkey_list, gc_addr_info.server_id_list);
+    }
+    else
+    {
+        gc_info_list_.push_back(gc_info);
+        isgcinfochange = true;
+    }
+
+    if (isgcinfochange)
+    {
+        num_subblocks = gc_info_list.size();
+        // update gc info num
+        for (int i = 0; i < num_replication_; i++)
+        {
+            uint32_t rkey = nm->get_server_rkey(i);
+            ret = nm->nm_rdma_write_inl_to_sid(&num_subblocks, sizeof(uint32_t),
+                                               client_gc_nums_addr_, rkey, i);
+            // assert(ret == 0);
+        }
+
+        if (!gc_info_list_.empty())
+
+            // send gc info to remote
+            for (int i = 0; i < num_replication_; i++)
+            {
+                uint32_t rkey = nm->get_server_rkey(i);
+                ret = nm->nm_rdma_write_inl_to_sid(&gc_info, num_subblocks * sizeof(ClientGCAddrInfo),
+                                                   client_gc_addr_, rkey, i);
+                // assert(ret == 0);
+            }
+    }
 }

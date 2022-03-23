@@ -33,7 +33,8 @@ typedef struct TagClientMMBlock
 enum ClientAllocType
 {
     TYPE_SUBTABLE = 1,
-    TYPE_KVBLOCK = 2
+    TYPE_KVBLOCK = 2,
+    TYPE_BASELINE = 3
 };
 
 typedef struct TagClientMMAllocCtx
@@ -95,8 +96,9 @@ private:
     bool is_allocing_new_block_;
 
     // for gc
-    void *gc_buf_; 
+    void *gc_buf_;
     struct ibv_mr *gc_mr_;
+    std::vector<ClientGCAddrInfo> gc_info_list_;
 
     // for recovery
     void *recover_buf_;
@@ -155,8 +157,14 @@ private:
 
     int free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list);
     int free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, const uint32_t server_id);
+    void mm_free_local(uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
 
+    // for gc
+    void init_gc_buf_()
+    void free_gc_buf();
     int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list);
+    bool isbelongmine(uint64_t free_addr);
+
     // inline private methods
 private:
     inline uint32_t get_alloc_hint_rr()
