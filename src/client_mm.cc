@@ -996,7 +996,7 @@ bool ClientMM::isbelongmine(uint64_t free_addr)
 {
     for (int i = 0; i < mm_blocks_.size(); i++)
     {
-        if (mr_info_list[i].mr_info_list[0].addr <= free_addr && mr_info_list[i].mr_info_list[0].addr + mm_block_sz_ > free_addr)
+        if (mm_blocks_[i].mr_info_list[0].addr <= free_addr && mm_blocks_[i].mr_info_list[0].addr + mm_block_sz_ > free_addr)
         {
             return true;
         }
@@ -1031,14 +1031,14 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
 
     // get gc info num
     uint32_t rkey = nm->get_server_rkey(0);
-    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_buf_->lkey, sizeof(uint32_t),
+    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, sizeof(uint32_t),
                                     client_gc_nums_addr_, rkey, 0);
     uint32_t num_subblocks = *(uint32_t *)gc_buf_;
 
     init_gc_buf_();
 
     // get gc info
-    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_buf_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
+    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
                                     client_gc_addr_, rkey, 0);
     ClientGCAddrInfo *gc_info_ptr = (ClientGCAddrInfo *)gc_buf_;
 
@@ -1054,13 +1054,13 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
         }
         else
         {
-            gc_info_list_.push_back(*gc_info_ptr)
+            gc_info_list_.push_back(*gc_info_ptr);
         }
         gc_info_ptr += sizeof(ClientGCAddrInfo);
     }
 
     // process local gc info
-    uint64_t free_addr = gc_info.addr_list[0];
+    uint64_t free_addr = gc_addr_info.addr_list[0];
 
     if (isbelongmine(free_addr))
     {
@@ -1074,7 +1074,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
 
     if (isgcinfochange)
     {
-        num_subblocks = gc_info_list.size();
+        num_subblocks = gc_info_list_.size();
         // update gc info num
         for (int i = 0; i < num_replication_; i++)
         {

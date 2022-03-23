@@ -267,6 +267,7 @@ int ClientFMM::load_seq_mm_requests(uint32_t num_ops, char *op_type)
         init_mm_req_ctx(&mm_req_ctx_list_[i], &kv_info_list_[i], op_type);
     }
 }
+
 void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation)
 {
     req_ctx->coro_id = 0;
@@ -354,36 +355,6 @@ int ClientFMM::alloc_improvement(MMReqCtx *ctx)
 
     ctx->is_finished = true;
     return ctx->ret_val.ret_code;
-}
-
-void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operation)
-{
-    req_ctx->coro_id = 0;
-    req_ctx->size_ = mm_->mm_block_sz_ - sizeof(KVLogHeader);
-
-    req_ctx->kv_info = kv_info;
-
-    if (strcmp(operation, "ALLOC_BASELINE") == 0)
-    {
-        req_ctx->req_type = MM_REQ_ALLOC_BASELINE;
-    }
-    else if (strcmp(operation, "FREE_BASELINE") == 0)
-    {
-        req_ctx->req_type = MM_REQ_FREE_BASELINE;
-    }
-    else if (strcmp(operation, "ALLOC_IMPROVEMENT") == 0)
-    {
-        req_ctx->req_type = MM_REQ_FREE_BASELINE;
-    }
-    else if (strcmp(operation, "FREE_IMPROVEMENT") == 0)
-    {
-        req_ctx->req_type = MM_REQ_FREE_BASELINE;
-    }
-}
-
-int ClientFMM::get_num_rep()
-{
-    return num_replication_;
 }
 
 int ClientFMM::free_improvement(MMReqCtx *ctx)
