@@ -1084,7 +1084,8 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
             // assert(ret == 0);
         }
 
-        if (!gc_info_list_.empty()){
+        if (!gc_info_list_.empty())
+        {
             // send gc info to remote
             for (int i = 0; i < num_replication_; i++)
             {
@@ -1092,7 +1093,8 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
                 ret = nm->nm_rdma_write_inl_to_sid(gc_info_list_.c_array(), num_subblocks * sizeof(ClientGCAddrInfo),
                                                    client_gc_addr_, rkey, i);
                 // assert(ret == 0);
-            }            
+            }
         }
     }
+    return 0;
 }

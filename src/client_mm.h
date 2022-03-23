@@ -162,7 +162,7 @@ private:
     // for gc
     void init_gc_buf_();
     void free_gc_buf();
-    int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list);
+    int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
     bool isbelongmine(uint64_t free_addr);
 
     // inline private methods
