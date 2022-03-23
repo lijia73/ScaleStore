@@ -394,7 +394,7 @@ int ClientFMM::free_improvement(MMReqCtx *ctx)
     header->ctl_bits = KV_LOG_GC;
     // 1. free remote memory
     uint32_t alloc_size = ctx->size_ + sizeof(KVLogHeader);
-    ret = mm_->mm_free_baseline(nm_, &ctx->mm_alloc_ctx);
+    ret = mm_->mm_free_improvement(nm_, &ctx->mm_alloc_ctx);
     if (ret != 0)
     {
         ctx->is_finished = true;
