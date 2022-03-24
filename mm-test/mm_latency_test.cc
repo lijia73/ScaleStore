@@ -46,7 +46,7 @@ static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
                 num_failed++;
             }
             break;
-        case MM_REQ_FREE_IMPROVEMENT:
+        case MM_REQ_ALLOC_IMPROVEMENT:
             gettimeofday(&st, NULL);
             ret = client.alloc_improvement(ctx);
             gettimeofday(&et, NULL);
