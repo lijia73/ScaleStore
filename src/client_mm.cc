@@ -996,7 +996,7 @@ bool ClientMM::isbelongmine(uint64_t free_addr)
 {
     for (int i = 0; i < mm_blocks_.size(); i++)
     {
-        if (mm_blocks_[i].mr_info_list[0].addr <= free_addr && mm_blocks_[i].mr_info_list[0].addr + mm_block_sz_ > free_addr)
+        if (mm_blocks_[i]->mr_info_list[0].addr <= free_addr && mm_blocks_[i]->mr_info_list[0].addr + mm_block_sz_ > free_addr)
         {
             return true;
         }
@@ -1068,7 +1068,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
     }
     else
     {
-        gc_info_list_.push_back(gc_info);
+        gc_info_list_.push_back(gc_addr_info);
         isgcinfochange = true;
     }
 
@@ -1090,7 +1090,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
             for (int i = 0; i < num_replication_; i++)
             {
                 uint32_t rkey = nm->get_server_rkey(i);
-                ret = nm->nm_rdma_write_inl_to_sid(gc_info_list_.c_array(), num_subblocks * sizeof(ClientGCAddrInfo),
+                ret = nm->nm_rdma_write_inl_to_sid(&gc_info_list_[0], num_subblocks * sizeof(ClientGCAddrInfo),
                                                    client_gc_addr_, rkey, i);
                 // assert(ret == 0);
             }
