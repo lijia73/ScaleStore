@@ -623,18 +623,6 @@ int ClientMM::mm_recover_prepare_space(UDPNetworkManager *nm)
     return 0;
 }
 
-int ClientMM::mm_gc_prepare_space(UDPNetworkManager *nm)
-{
-    int ret = 0;
-    // print_log(DEBUG, "  [%s] 1. create recoer space and register mr", __FUNCTION__);
-    IbInfo ib_info;
-    nm->get_ib_info(&ib_info);
-    gc_buf_ = malloc(GC_REC_SPACE_SIZE);
-    gc_mr_ = ibv_reg_mr(ib_info.ib_pd, gc_buf_, GC_REC_SPACE_SIZE, IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ);
-    // assert(gc_mr_ != NULL);
-    return 0;
-}
-
 int ClientMM::mm_traverse_log(UDPNetworkManager *nm)
 {
     int ret = 0;
@@ -990,6 +978,18 @@ void ClientMM::init_gc_buf_()
 {
     gc_info_list_.clear();
     memset(gc_buf_, 0, GC_REC_SPACE_SIZE);
+}
+
+int ClientMM::mm_gc_prepare_space(UDPNetworkManager *nm)
+{
+    int ret = 0;
+    // print_log(DEBUG, "  [%s] 1. create recoer space and register mr", __FUNCTION__);
+    IbInfo ib_info;
+    nm->get_ib_info(&ib_info);
+    gc_buf_ = malloc(GC_REC_SPACE_SIZE);
+    gc_mr_ = ibv_reg_mr(ib_info.ib_pd, gc_buf_, GC_REC_SPACE_SIZE, IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ);
+    // assert(gc_mr_ != NULL);
+    return 0;
 }
 
 bool ClientMM::isbelongmine(uint64_t free_addr)
