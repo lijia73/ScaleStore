@@ -970,7 +970,22 @@ void ClientMM::mm_alloc_improvement(size_t size, UDPNetworkManager *nm, __OUT Cl
 int ClientMM::mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
 {
     int ret = 0;
-    ret = syn_gc_info(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+    uint64_t free_addr = ctx->addr_list[0];
+    if (isbelongmine(free_addr))
+    {
+        mm_free_local(gc_addr_info.addr_list, gc_addr_info.rkey_list, gc_addr_info.server_id_list);
+    }
+    else
+    {
+        mm_free_remote(gc_addr_info.addr_list, gc_addr_info.rkey_list, gc_addr_info.server_id_list);
+        if (free_addr + mm_block_sz_ >= last_freed_addr_ || free_addr - mm_block_sz_ < last_freed_addr_)
+        {
+            ret = syn_gc_info(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+        }
+    }
+    // not belong to same coarse-grained memory segment
+
+    last_freed_addr_ = free_addr;
     return ret;
 }
 
@@ -1016,19 +1031,21 @@ void ClientMM::mm_free_local(uint64_t *addr_list, uint32_t *rkey_list, const uin
     subblock_free_queue_.push(tmp_info);
 }
 
+void ClientMM::mm_free_remote(uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
+{
+    SubblockInfo tmp_info;
+    for (int r = 0; r < num_replication_; r++)
+    {
+        tmp_info.addr_list[r] = addr_list[r];
+        tmp_info.rkey_list[r] = rkey_list[r];
+        tmp_info.server_id_list[r] = server_id_list[r];
+    }
+    subblock_free_queue_remote_.push(tmp_info);
+}
+
 int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
 {
     int ret = 0;
-    ClientGCAddrInfo gc_addr_info;
-    // prepare gc info
-    // print_log(DEBUG, "[%s] prepare meta info", __FUNCTION__);
-    for (int i = 0; i < num_replication_; i++)
-    {
-        gc_addr_info.server_id_list[i] = server_id_list[i];
-        gc_addr_info.addr_list[i] = addr_list[i];
-        gc_addr_info.rkey_list[i] = rkey_list[i];
-    }
-
     // get gc info num
     uint32_t rkey = nm->get_server_rkey(0);
     ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, sizeof(uint32_t),
@@ -1038,6 +1055,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
     init_gc_buf_();
 
     // get gc info
+    // TODO: traverse every client
     ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
                                     client_gc_addr_, rkey, 0);
     ClientGCAddrInfo *gc_info_ptr = (ClientGCAddrInfo *)gc_buf_;
@@ -1058,16 +1076,21 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
         }
         gc_info_ptr += sizeof(ClientGCAddrInfo);
     }
-
-    // process local gc info
-    uint64_t free_addr = gc_addr_info.addr_list[0];
-
-    if (isbelongmine(free_addr))
+    while (subblock_free_queue_remote_.size() > 0)
     {
-        mm_free_local(gc_addr_info.addr_list, gc_addr_info.rkey_list, gc_addr_info.server_id_list);
-    }
-    else
-    {
+
+        ClientGCAddrInfo gc_addr_info;
+        SubblockInfo freed_subblock = subblock_free_queue_remote_.front();
+        subblock_free_queue_remote_.pop();
+        // prepare gc info
+        // print_log(DEBUG, "[%s] prepare meta info", __FUNCTION__);
+        for (int i = 0; i < num_replication_; i++)
+        {
+            gc_addr_info.server_id_list[i] = freed_subblock.server_id_list[i];
+            gc_addr_info.addr_list[i] = freed_subblock.addr_list[i];
+            gc_addr_info.rkey_list[i] = freed_subblock.rkey_list[i];
+        }
+
         gc_info_list_.push_back(gc_addr_info);
         isgcinfochange = true;
     }

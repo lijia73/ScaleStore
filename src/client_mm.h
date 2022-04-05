@@ -109,7 +109,9 @@ private:
 
     // modification
     std::queue<SubblockInfo> subblock_free_queue_;
-    SubblockInfo last_freed_info_;
+    SubblockInfo last_allocated_info_;
+    std::queue<SubblockInfo> subblock_free_queue_remote_;
+    uint64_t last_freed_addr_;
 
     ClientMMBlock last_allocated_info_base_;
 
@@ -158,6 +160,7 @@ private:
     int free_block_to_server(UDPNetworkManager *nm, uint64_t *addr_list, const uint8_t *server_id_list);
     int free_from_sid(UDPNetworkManager *nm, const struct MrInfo mr_info, const uint32_t server_id);
     void mm_free_local(uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
+    void mm_free_remote(uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
 
     // for gc
     void init_gc_buf_();
