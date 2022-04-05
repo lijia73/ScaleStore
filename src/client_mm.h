@@ -109,7 +109,7 @@ private:
 
     // modification
     std::queue<SubblockInfo> subblock_free_queue_;
-    SubblockInfo last_allocated_info_;
+    SubblockInfo last_freed_info_;
 
     ClientMMBlock last_allocated_info_base_;
 
