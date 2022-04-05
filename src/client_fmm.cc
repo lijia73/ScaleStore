@@ -285,11 +285,11 @@ void ClientFMM::init_mm_req_ctx(MMReqCtx *req_ctx, KVInfo *kv_info, char *operat
     }
     else if (strcmp(operation, "ALLOC_IMPROVEMENT") == 0)
     {
-        req_ctx->req_type = MM_REQ_FREE_BASELINE;
+        req_ctx->req_type = MM_REQ_ALLOC_IMPROVEMENT;
     }
     else if (strcmp(operation, "FREE_IMPROVEMENT") == 0)
     {
-        req_ctx->req_type = MM_REQ_FREE_BASELINE;
+        req_ctx->req_type = MM_REQ_FREE_IMPROVEMENT;
     }
 }
 
