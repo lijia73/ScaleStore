@@ -973,17 +973,17 @@ int ClientMM::mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
     uint64_t free_addr = ctx->addr_list[0];
     if (isbelongmine(free_addr))
     {
-        mm_free_local(gc_addr_info.addr_list, gc_addr_info.rkey_list, gc_addr_info.server_id_list);
+        mm_free_local(ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
     }
     else
     {
-        mm_free_remote(gc_addr_info.addr_list, gc_addr_info.rkey_list, gc_addr_info.server_id_list);
+        mm_free_remote(ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+        // not belong to same coarse-grained memory segment
         if (free_addr + mm_block_sz_ >= last_freed_addr_ || free_addr - mm_block_sz_ < last_freed_addr_)
         {
             ret = syn_gc_info(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
         }
     }
-    // not belong to same coarse-grained memory segment
 
     last_freed_addr_ = free_addr;
     return ret;
@@ -1056,6 +1056,10 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
 
     // get gc info
     // TODO: traverse every client
+    
+    // client_gc_nums_addr_ = conf->server_base_addr + META_AREA_LEN + CLIENT_GC_LEN * (conf->server_id - conf->memory_num + 1);
+    // client_gc_addr_ = client_gc_nums_addr_ + sizeof(uint32_t);
+
     ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
                                     client_gc_addr_, rkey, 0);
     ClientGCAddrInfo *gc_info_ptr = (ClientGCAddrInfo *)gc_buf_;
@@ -1078,7 +1082,6 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
     }
     while (subblock_free_queue_remote_.size() > 0)
     {
-
         ClientGCAddrInfo gc_addr_info;
         SubblockInfo freed_subblock = subblock_free_queue_remote_.front();
         subblock_free_queue_remote_.pop();
