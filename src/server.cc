@@ -91,7 +91,7 @@ int Server::server_on_alloc(const struct KVMsg * request, struct sockaddr_in * s
 int Server::server_on_free(const struct KVMsg * request, struct sockaddr_in * src_addr, 
         socklen_t src_addr_len) {
     int ret = 0;
-    printf("%llu\n",request->body.mr_info.addr);
+    // printf("%llu\n",request->body.mr_info.addr);
     ret = mm_->mm_free(request->body.mr_info.addr);
 
     struct KVMsg reply;
