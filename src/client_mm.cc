@@ -931,6 +931,8 @@ void ClientMM::mm_alloc_improvement(size_t size, UDPNetworkManager *nm, __OUT Cl
     int num_subblocks_required = aligned_size / subblock_sz_;
     assert(num_subblocks_required == 1);
 
+    ctx->size_ = size;
+
     assert(subblock_free_queue_.size() > 0);
     SubblockInfo alloc_subblock = subblock_free_queue_.front();
     subblock_free_queue_.pop();
@@ -1049,7 +1051,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
     // TODO: traverse every client
     // client_gc_nums_addr_ = conf->server_base_addr + META_AREA_LEN + CLIENT_GC_LEN * (conf->server_id - conf->memory_num + 1);
     // client_gc_addr_ = client_gc_nums_addr_ + sizeof(uint32_t);
-    
+
     // get gc info num
     uint32_t rkey = nm->get_server_rkey(0);
     ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, sizeof(uint32_t),
