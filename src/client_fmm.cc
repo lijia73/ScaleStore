@@ -388,7 +388,7 @@ int ClientFMM::free_improvement(MMReqCtx *ctx)
 
 void * client_ops_fb_cnt_ops_mm(void * arg) {
     boost::this_fiber::yield();
-    ClientFiberArgs * fiber_args = (ClientFiberArgs *)arg;
+    ClientFMMFiberArgs * fiber_args = (ClientFMMFiberArgs *)arg;
     uint32_t num_failed = 0;
     int ret = 0;
     
