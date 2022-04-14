@@ -65,9 +65,9 @@ static void start_client_threads(char *op_type, int num_clients, GlobalConfig *c
     printf("alloc total: %d ops\n", total_alloc_tpt);
     printf("alloc failed: %d ops\n", total_alloc_failed);
     printf("alloc tpt: %d ops/s\n", (total_alloc_tpt - total_alloc_failed) * 1000 / 500);
-    printf("free total: %d ops\n", total_delete_tpt);
-    printf("free failed: %d ops\n", total_delete_failed);
-    printf("free tpt: %d ops/s\n", (total_delete_tpt - total_delete_failed) * 1000 / 500);
+    printf("free total: %d ops\n", total_free_tpt);
+    printf("free failed: %d ops\n", total_free_failed);
+    printf("free tpt: %d ops/s\n", (total_free_tpt - total_free_failed) * 1000 / 500);
     free(client_args_list);
 }
 
