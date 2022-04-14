@@ -14,8 +14,8 @@ typedef struct TagMMRunClientArgs
     char *workload_name;
     char *config_file;
     pthread_barrier_t *alloc_start_barrier;
-    pthread_barrier_t *free_finish_barrier;
-    pthread_barrier_t *alloc_start_barrier;
+    pthread_barrier_t *alloc_finish_barrier;
+    pthread_barrier_t *free_start_barrier;
     pthread_barrier_t *free_finish_barrier;
     volatile bool *should_stop;
     // bool * timer_is_ready;
