@@ -309,7 +309,7 @@ public:
     int micro_workload_num_;
 };
 
-typedef struct TagClientFiberArgs
+typedef struct TagClientFMMFiberArgs
 {
     ClientFMM *client;
     uint32_t ops_st_idx;

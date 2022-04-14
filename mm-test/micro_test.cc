@@ -23,7 +23,7 @@ static int micro_test_tpt(ClientFMM &client, MMRunClientArgs *args)
 
     printf("Test phase start\n");
     boost::fibers::barrier global_barrier(client.num_coroutines_ + 1);
-    ClientFiberArgs *fb_args_list = (ClientFiberArgs *)malloc(sizeof(ClientFiberArgs) * client.num_local_operations_);
+    ClientFMMFiberArgs *fb_args_list = (ClientFMMFiberArgs *)malloc(sizeof(ClientFMMFiberArgs) * client.num_local_operations_);
     uint32_t coro_num_ops = client.num_local_operations_ / client.num_coroutines_;
     for (int i = 0; i < client.num_coroutines_; i++)
     {
