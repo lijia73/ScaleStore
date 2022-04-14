@@ -6,19 +6,20 @@
 
 #include "client.h"
 
-typedef struct TagMicroRunClientArgs {
+typedef struct TagMMRunClientArgs
+{
     int thread_id;
     int main_core_id;
     int poll_core_id;
-    char * workload_name;
-    char * config_file;
-    pthread_barrier_t * alloc_start_barrier;
-    pthread_barrier_t * free_finish_barrier;
-    pthread_barrier_t * alloc_start_barrier;
-    pthread_barrier_t * free_finish_barrier;
-    volatile bool * should_stop;
+    char *workload_name;
+    char *config_file;
+    pthread_barrier_t *alloc_start_barrier;
+    pthread_barrier_t *free_finish_barrier;
+    pthread_barrier_t *alloc_start_barrier;
+    pthread_barrier_t *free_finish_barrier;
+    volatile bool *should_stop;
     // bool * timer_is_ready;
-    pthread_barrier_t * timer_barrier;
+    pthread_barrier_t *timer_barrier;
 
     uint32_t ret_num_alloc_ops;
     uint32_t ret_num_free_ops;
@@ -27,10 +28,10 @@ typedef struct TagMicroRunClientArgs {
 
     uint32_t client_id;
     uint32_t num_threads;
-    char * op_type;
-    Client * client;
-} MicroRunClientArgs;
+    char *op_type;
+    Client *client;
+} MMRunClientArgs;
 
-void * run_client(void * _args);
+void *run_client(void *_args);
 
 #endif
