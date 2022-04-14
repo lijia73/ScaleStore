@@ -6,23 +6,24 @@
 
 #include "client.h"
 
-typedef struct TagMicroRunClientArgs {
+typedef struct TagMicroRunClientArgs
+{
     int thread_id;
     int main_core_id;
     int poll_core_id;
-    char * workload_name;
-    char * config_file;
-    pthread_barrier_t * insert_start_barrier;
-    pthread_barrier_t * alloc_finish_barrierinsert_finish_barrier;
-    pthread_barrier_t * update_start_barrier;
-    pthread_barrier_t * update_finish_barrier;
-    pthread_barrier_t * search_start_barrier;
-    pthread_barrier_t * search_finish_barrier;
-    pthread_barrier_t * delete_start_barrier;
-    pthread_barrier_t * delete_finish_barrier;
-    volatile bool * should_stop;
+    char *workload_name;
+    char *config_file;
+    pthread_barrier_t *insert_start_barrier;
+    pthread_barrier_t *insert_finish_barrier;
+    pthread_barrier_t *update_start_barrier;
+    pthread_barrier_t *update_finish_barrier;
+    pthread_barrier_t *search_start_barrier;
+    pthread_barrier_t *search_finish_barrier;
+    pthread_barrier_t *delete_start_barrier;
+    pthread_barrier_t *delete_finish_barrier;
+    volatile bool *should_stop;
     // bool * timer_is_ready;
-    pthread_barrier_t * timer_barrier;
+    pthread_barrier_t *timer_barrier;
 
     uint32_t ret_num_insert_ops;
     uint32_t ret_num_update_ops;
@@ -35,11 +36,11 @@ typedef struct TagMicroRunClientArgs {
 
     uint32_t client_id;
     uint32_t num_threads;
-    char * op_type;
-    Client * client;
+    char *op_type;
+    Client *client;
 } MicroRunClientArgs;
 
-void * run_client(void * _args);
-void * run_client_cr(void * _args);
+void *run_client(void *_args);
+void *run_client_cr(void *_args);
 
 #endif
