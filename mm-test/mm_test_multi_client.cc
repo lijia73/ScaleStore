@@ -12,23 +12,15 @@
 static void start_client_threads(char * op_type, int num_clients, GlobalConfig * config, 
         char * config_fname) {
     MicroRunClientArgs * client_args_list = (MicroRunClientArgs *)malloc(sizeof(MicroRunClientArgs) * num_clients);
-    pthread_barrier_t insert_start_barrier;
-    pthread_barrier_t insert_finish_barrier;
-    pthread_barrier_t update_start_barrier;
-    pthread_barrier_t update_finish_barrier;
-    pthread_barrier_t search_start_barrier;
-    pthread_barrier_t search_finish_barrier;
-    pthread_barrier_t delete_start_barrier;
-    pthread_barrier_t delete_finish_barrier;
+    pthread_barrier_t alloc_start_barrier;
+    pthread_barrier_t alloc_finish_barrier;
+    pthread_barrier_t free_start_barrier;
+    pthread_barrier_t free_finish_barrier;
     pthread_barrier_t global_timer_barrier;
-    pthread_barrier_init(&insert_start_barrier, NULL, num_clients);
-    pthread_barrier_init(&insert_finish_barrier, NULL, num_clients);
-    pthread_barrier_init(&update_start_barrier, NULL, num_clients);
-    pthread_barrier_init(&update_finish_barrier, NULL, num_clients);
-    pthread_barrier_init(&search_start_barrier, NULL, num_clients);
-    pthread_barrier_init(&search_finish_barrier, NULL, num_clients);
-    pthread_barrier_init(&delete_start_barrier, NULL, num_clients);
-    pthread_barrier_init(&delete_finish_barrier, NULL, num_clients);
+    pthread_barrier_init(&alloc_start_barrier, NULL, num_clients);
+    pthread_barrier_init(&alloc_finish_barrier, NULL, num_clients);
+    pthread_barrier_init(&free_start_barrier, NULL, num_clients);
+    pthread_barrier_init(&free_finish_barrier, NULL, num_clients);
     pthread_barrier_init(&global_timer_barrier, NULL, num_clients);
     volatile bool should_stop = false;
 
@@ -40,61 +32,39 @@ static void start_client_threads(char * op_type, int num_clients, GlobalConfig *
         client_args_list[i].main_core_id = config->main_core_id + i * 2;
         client_args_list[i].poll_core_id = config->poll_core_id + i * 2;
         client_args_list[i].config_file   = config_fname;
-        client_args_list[i].insert_start_barrier= &insert_start_barrier;
-        client_args_list[i].insert_finish_barrier= &insert_finish_barrier;
-        client_args_list[i].update_start_barrier= &update_start_barrier;
-        client_args_list[i].update_finish_barrier= &update_finish_barrier;
-        client_args_list[i].search_start_barrier= &search_start_barrier;
-        client_args_list[i].search_finish_barrier= &search_finish_barrier;
-        client_args_list[i].delete_start_barrier= &delete_start_barrier;
-        client_args_list[i].delete_finish_barrier= &delete_finish_barrier;
+        client_args_list[i].alloc_start_barrier= &alloc_start_barrier;
+        client_args_list[i].alloc_finish_barrier= &alloc_finish_barrier;
+        client_args_list[i].free_start_barrier= &free_start_barrier;
+        client_args_list[i].free_finish_barrier= &free_finish_barrier;
         client_args_list[i].timer_barrier = &global_timer_barrier;
         client_args_list[i].should_stop   = &should_stop;
-        client_args_list[i].ret_num_insert_ops = 0;
-        client_args_list[i].ret_num_update_ops = 0;
-        client_args_list[i].ret_num_search_ops = 0;
-        client_args_list[i].ret_num_delete_ops = 0;
-        client_args_list[i].ret_fail_insert_num = 0;
-        client_args_list[i].ret_fail_update_num = 0;
-        client_args_list[i].ret_fail_search_num = 0;
-        client_args_list[i].ret_fail_delete_num = 0;
+        client_args_list[i].ret_num_alloc_ops = 0;
+        client_args_list[i].ret_num_free_ops = 0;
+        client_args_list[i].ret_fail_alloc_num = 0;
+        client_args_list[i].ret_fail_free_num = 0;
         client_args_list[i].op_type = op_type;
         pthread_t tid;
         pthread_create(&tid, NULL, run_client, &client_args_list[i]);
         tid_list[i] = tid;
     }
 
-    uint32_t total_insert_tpt = 0;
-    uint32_t total_insert_failed = 0;
-    uint32_t total_update_tpt = 0;
-    uint32_t total_update_failed = 0;
-    uint32_t total_search_tpt = 0;
-    uint32_t total_search_failed = 0;
-    uint32_t total_delete_tpt = 0;
-    uint32_t total_delete_failed = 0;
+    uint32_t total_alloc_tpt = 0;
+    uint32_t total_alloc_failed = 0;
+    uint32_t total_free_tpt = 0;
+    uint32_t total_free_failed = 0;
     for (int i = 0; i < num_clients; i ++) {
         pthread_join(tid_list[i], NULL);
-        total_insert_tpt += client_args_list[i].ret_num_insert_ops;
-        total_update_tpt += client_args_list[i].ret_num_update_ops;
-        total_search_tpt += client_args_list[i].ret_num_search_ops;
-        total_delete_tpt += client_args_list[i].ret_num_delete_ops;
-        total_insert_failed += client_args_list[i].ret_fail_insert_num;
-        total_update_failed += client_args_list[i].ret_fail_update_num;
-        total_search_failed += client_args_list[i].ret_fail_search_num;
-        total_delete_failed += client_args_list[i].ret_fail_delete_num;
+        total_alloc_tpt += client_args_list[i].ret_num_alloc_ops;
+        total_free_tpt += client_args_list[i].ret_num_free_ops;
+        total_alloc_failed += client_args_list[i].ret_fail_alloc_num;
+        total_free_failed += client_args_list[i].ret_fail_free_num;
     }
-    printf("insert total: %d ops\n", total_insert_tpt);
-    printf("insert failed: %d ops\n", total_insert_failed);
-    printf("insert tpt: %d ops/s\n", (total_insert_tpt - total_insert_failed) * 1000 / 500);
-    printf("update total: %d ops\n", total_update_tpt);
-    printf("update failed: %d ops\n", total_update_failed);
-    printf("update tpt: %d ops/s\n", (total_update_tpt - total_update_failed) * 1000 / 10000);
-    printf("search total: %d ops\n", total_search_tpt);
-    printf("search failed: %d ops\n", total_search_failed);
-    printf("search tpt: %d ops/s\n", (total_search_tpt - total_search_failed) * 1000 / 10000);
-    printf("delete total: %d ops\n", total_delete_tpt);
-    printf("delete failed: %d ops\n", total_delete_failed);
-    printf("delete tpt: %d ops/s\n", (total_delete_tpt - total_delete_failed) * 1000 / 500);
+    printf("alloc total: %d ops\n", total_alloc_tpt);
+    printf("alloc failed: %d ops\n", total_alloc_failed);
+    printf("alloc tpt: %d ops/s\n", (total_alloc_tpt - total_alloc_failed) * 1000 / 500);
+    printf("free total: %d ops\n", total_delete_tpt);
+    printf("free failed: %d ops\n", total_delete_failed);
+    printf("free tpt: %d ops/s\n", (total_delete_tpt - total_delete_failed) * 1000 / 500);
     free(client_args_list);
 }
 

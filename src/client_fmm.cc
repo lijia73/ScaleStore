@@ -385,3 +385,63 @@ int ClientFMM::free_improvement(MMReqCtx *ctx)
     ctx->is_finished = true;
     return ctx->ret_val.ret_code;
 }
+
+void * client_ops_fb_cnt_ops_mm(void * arg) {
+    boost::this_fiber::yield();
+    ClientFiberArgs * fiber_args = (ClientFiberArgs *)arg;
+    uint32_t num_failed = 0;
+    int ret = 0;
+    
+    fiber_args->b->wait();
+    uint32_t cnt = 0;
+    bool is_finished = false;
+    while (*fiber_args->should_stop == false && fiber_args->ops_num != 0) {
+        uint32_t idx = cnt % fiber_args->ops_num;
+        MMReqCtx * ctx = &fiber_args->client->mm_req_ctx_list_[idx + fiber_args->ops_st_idx];
+        ctx->coro_id = fiber_args->coro_id;
+        ctx->should_stop = fiber_args->should_stop;
+
+        switch (ctx->req_type) {
+        case MM_REQ_ALLOC_BASELINE:
+            ret = fiber_args->client->alloc_baseline(ctx);
+            if (ret == MM_OPS_FAIL_RETURN)
+            {
+                num_failed++;
+            }
+            break;
+        case MM_REQ_FREE_BASELINE:
+            ret = fiber_args->client->free_baseline(ctx);
+            if (ret == MM_OPS_FAIL_RETURN)
+            {
+                num_failed++;
+            }
+            break;
+        case MM_REQ_ALLOC_IMPROVEMENT:
+            ret = fiber_args->client->alloc_improvement(ctx);
+            if (ret == MM_OPS_FAIL_RETURN)
+            {
+                num_failed++;
+            }
+            break;
+        case MM_REQ_FREE_IMPROVEMENT:
+            ret = fiber_args->client->free_improvement(ctx);
+            if (ret == MM_OPS_FAIL_RETURN)
+            {
+                num_failed++;
+            }
+            break;        
+        default:
+            assert(0);
+            break;
+        }
+        cnt ++;
+        if (cnt > fiber_args->ops_num && is_finished == false) {
+            is_finished = true;
+            printf("finished!\n");
+        }
+    }
+    fiber_args->ops_cnt = cnt;
+    fiber_args->num_failed = num_failed;
+
+    return NULL;
+}

@@ -13,7 +13,7 @@ typedef struct TagMicroRunClientArgs {
     char * workload_name;
     char * config_file;
     pthread_barrier_t * insert_start_barrier;
-    pthread_barrier_t * insert_finish_barrier;
+    pthread_barrier_t * alloc_finish_barrierinsert_finish_barrier;
     pthread_barrier_t * update_start_barrier;
     pthread_barrier_t * update_finish_barrier;
     pthread_barrier_t * search_start_barrier;
