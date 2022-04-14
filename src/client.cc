@@ -4699,7 +4699,7 @@ void Client::load_cache() {
     close(cache_dump_fd);
 }
 
-int Client::“load_seq_kv_requests(uint32_t num_keys, char * op_type) {
+int Client::load_seq_kv_requests(uint32_t num_keys, char * op_type) {
     num_total_operations_ = num_keys;
     num_local_operations_ = num_keys;
 
