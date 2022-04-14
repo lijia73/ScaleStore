@@ -327,6 +327,6 @@ typedef struct TagClientFMMFiberArgs
     volatile bool *should_stop;
     uint32_t ops_cnt;
     uint32_t thread_id;
-} ClientFiberArgs;
+} ClientFMMFiberArgs;
 void *client_ops_fb_cnt_ops_mm(void *arg);
 #endif
