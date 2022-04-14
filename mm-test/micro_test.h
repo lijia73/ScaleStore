@@ -40,6 +40,5 @@ typedef struct TagMicroRunClientArgs {
 } MicroRunClientArgs;
 
 void * run_client(void * _args);
-void * run_client_cr(void * _args);
 
 #endif
