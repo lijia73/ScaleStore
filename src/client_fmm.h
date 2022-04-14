@@ -56,6 +56,8 @@ typedef struct TagMMReqCtx
         int ret_code;
     } ret_val;
 
+    volatile bool *should_stop;
+
 } MMReqCtx;
 
 class ClientFMM
@@ -307,23 +309,24 @@ public:
     int micro_workload_num_;
 };
 
-typedef struct TagClientFiberArgs {
-    ClientFMM   * client;
+typedef struct TagClientFiberArgs
+{
+    ClientFMM *client;
     uint32_t ops_st_idx;
     uint32_t ops_num;
     uint32_t coro_id;
 
     uint32_t num_failed;
-    
+
     // for count time
-    struct timeval * st;
-    struct timeval * et;
+    struct timeval *st;
+    struct timeval *et;
 
     // for count ops
-    boost::fibers::barrier * b;
-    volatile bool   * should_stop;
+    boost::fibers::barrier *b;
+    volatile bool *should_stop;
     uint32_t ops_cnt;
     uint32_t thread_id;
 } ClientFiberArgs;
-void * client_ops_fb_cnt_ops_mm(void * arg);
+void *client_ops_fb_cnt_ops_mm(void *arg);
 #endif
