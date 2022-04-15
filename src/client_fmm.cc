@@ -403,7 +403,7 @@ void *client_ops_fb_cnt_ops_mm(void *arg)
         ctx->coro_id = fiber_args->coro_id;
         ctx->should_stop = fiber_args->should_stop;
         printf("debug 1\n");
-        printf("ctx:%lld\n", *(uint64_t *)ctx->kv_info->l_addr);
+        printf("ctx:%lld\n", (uint64_t)ctx->kv_info->l_addr);
 
         switch (ctx->req_type)
         {
