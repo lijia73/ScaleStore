@@ -84,5 +84,5 @@ int main(int argc, char **argv)
     int ret = load_config(argv[1], &config);
     assert(ret == 0);
 
-    start_client_threads("INSERT", num_clients, &config, argv[1]);
+    start_client_threads("", num_clients, &config, argv[1]);
 }
