@@ -338,7 +338,6 @@ int ClientFMM::alloc_improvement(MMReqCtx *ctx)
     {
         ctx->is_finished = true;
         ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
-        printf("err\n");
         return ctx->ret_val.ret_code;
     }
 

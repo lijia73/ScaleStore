@@ -65,6 +65,7 @@ static int mm_test_tpt(ClientFMM &client, MMRunClientArgs *args)
     {
         timer_fb.join();
     }
+    printf("%d passed timerfb\n", args->thread_id);
     uint32_t ops_cnt = 0;
     uint32_t num_failed = 0;
     for (int i = 0; i < client.num_coroutines_; i++)
