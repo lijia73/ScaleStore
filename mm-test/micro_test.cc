@@ -131,7 +131,9 @@ void *run_client(void *_args)
         printf("press to sync start %s\n", args->op_type);
         getchar();
     }
+    printf("before alloc start barrier", args->op_type);
     pthread_barrier_wait(args->alloc_start_barrier);
+    printf("after alloc start barrier", args->op_type);
 
     printf("%d start %s\n", args->thread_id, args->op_type);
     ret = mm_test_tpt(client, args);
