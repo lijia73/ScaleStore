@@ -43,9 +43,7 @@ static int mm_test_tpt(ClientFMM &client, MMRunClientArgs *args)
         boost::fibers::fiber fb(client_ops_fb_cnt_ops_mm, &fb_args_list[i]);
         fb_list[i] = std::move(fb);
     }
-    // printf("Before global barrier\n");
-    // global_barrier.wait();
-    // printf("After global barrier\n");
+    global_barrier.wait();
     boost::fibers::fiber timer_fb;
     if (args->thread_id == 0)
     {
