@@ -15,7 +15,7 @@ static void timer_fb_func_ms(volatile bool *should_stop, int milliseconds)
     // printf("stopped!\n");
 }
 
-static int micro_test_tpt(ClientFMM &client, MMRunClientArgs *args)
+static int mm_test_tpt(ClientFMM &client, MMRunClientArgs *args)
 {
     int ret = 0;
     ret = client.load_seq_mm_requests(client.micro_workload_num_, args->op_type);
@@ -131,13 +131,13 @@ void *run_client(void *_args)
         printf("press to sync start %s\n", args->op_type);
         getchar();
     }
-    pthread_barrier_wait(args->insert_start_barrier);
+    pthread_barrier_wait(args->alloc_start_barrier);
 
     printf("%d start %s\n", args->thread_id, args->op_type);
-    ret = micro_test_tpt(client, args);
+    ret = mm_test_tpt(client, args);
     assert(ret == 0);
     printf("%d %s finished\n", args->thread_id, args->op_type);
-    pthread_barrier_wait(args->insert_finish_barrier);
+    pthread_barrier_wait(args->alloc_finish_barrier);
 
     args->op_type = "FREE_IMPROVEMENT";
     client.workload_run_time_ = 500;
@@ -148,13 +148,13 @@ void *run_client(void *_args)
         printf("press to sync start %s\n", args->op_type);
         getchar();
     }
-    pthread_barrier_wait(args->delete_start_barrier);
+    pthread_barrier_wait(args->free_start_barrier);
 
     printf("%d start %s\n", args->thread_id, args->op_type);
-    ret = micro_test_tpt(client, args);
+    ret = mm_test_tpt(client, args);
     assert(ret == 0);
     printf("%d %s finished\n", args->thread_id, args->op_type);
-    pthread_barrier_wait(args->delete_finish_barrier);
+    pthread_barrier_wait(args->free_finish_barrier);
 
     client.stop_polling_thread();
     pthread_join(polling_tid, NULL);
