@@ -120,7 +120,7 @@ void *run_client(void *_args)
         }
     }
 
-    Client client(&config);
+    ClientFMM client(&config);
 
     pthread_t polling_tid = client.start_polling_thread();
 
