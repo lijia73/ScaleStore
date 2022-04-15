@@ -300,6 +300,9 @@ public:
 
     int get_num_rep();
 
+    pthread_t start_polling_thread();
+    void stop_polling_thread();
+
     KVInfo *kv_info_list_;
     MMReqCtx *mm_req_ctx_list_;
     uint32_t num_total_operations_;

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#include "client.h"
+#include "client_fmm.h"
 
 typedef struct TagMMRunClientArgs
 {

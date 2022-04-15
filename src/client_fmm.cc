@@ -445,3 +445,17 @@ void * client_ops_fb_cnt_ops_mm(void * arg) {
 
     return NULL;
 }
+
+pthread_t ClientFMM::start_polling_thread() {
+    NMPollingThreadArgs * args = (NMPollingThreadArgs *)malloc(sizeof(NMPollingThreadArgs));
+    args->nm = nm_;
+    args->core_id = poll_core_id_;
+
+    pthread_t polling_tid;
+    pthread_create(&polling_tid, NULL, nm_polling_thread, (void *)args);
+    return polling_tid;
+}
+
+void ClientFMM::stop_polling_thread() {
+    nm_->stop_polling();
+}
