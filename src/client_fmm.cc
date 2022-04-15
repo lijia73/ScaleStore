@@ -393,7 +393,7 @@ void *client_ops_fb_cnt_ops_mm(void *arg)
     uint32_t num_failed = 0;
     int ret = 0;
 
-    // fiber_args->b->wait();
+    fiber_args->b->wait();
     uint32_t cnt = 0;
     bool is_finished = false;
     while (*fiber_args->should_stop == false && fiber_args->ops_num != 0)
