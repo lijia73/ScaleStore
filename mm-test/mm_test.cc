@@ -43,9 +43,9 @@ static int mm_test_tpt(ClientFMM &client, MMRunClientArgs *args)
         boost::fibers::fiber fb(client_ops_fb_cnt_ops_mm, &fb_args_list[i]);
         fb_list[i] = std::move(fb);
     }
-    printf("Before global barrier\n");
-    global_barrier.wait();
-    printf("After global barrier\n");
+    // printf("Before global barrier\n");
+    // global_barrier.wait();
+    // printf("After global barrier\n");
     boost::fibers::fiber timer_fb;
     if (args->thread_id == 0)
     {
@@ -126,7 +126,7 @@ void *run_client(void *_args)
     pthread_t polling_tid = client.start_polling_thread();
 
     args->op_type = "ALLOC_IMPROVEMENT";
-    client.workload_run_time_ = 50;
+    client.workload_run_time_ = 500;
     if (args->thread_id == 0)
     {
         printf("press to sync start %s\n", args->op_type);
@@ -141,7 +141,7 @@ void *run_client(void *_args)
     pthread_barrier_wait(args->alloc_finish_barrier);
 
     args->op_type = "FREE_IMPROVEMENT";
-    client.workload_run_time_ = 50;
+    client.workload_run_time_ = 500;
     if (args->thread_id == 0)
     {
         pthread_barrier_init(args->timer_barrier, NULL, args->num_threads);
