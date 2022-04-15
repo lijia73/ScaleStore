@@ -438,6 +438,7 @@ void *client_ops_fb_cnt_ops_mm(void *arg)
             break;
         }
         cnt++;
+        printf("cnt: %d, ops_num: %d\n",cnt,fiber_args->ops_num);
         if (cnt > fiber_args->ops_num && is_finished == false)
         {
             is_finished = true;
