@@ -126,7 +126,7 @@ void *run_client(void *_args)
     pthread_t polling_tid = client.start_polling_thread();
 
     args->op_type = "ALLOC_IMPROVEMENT";
-    client.workload_run_time_ = 500;
+    client.workload_run_time_ = 50;
     if (args->thread_id == 0)
     {
         printf("press to sync start %s\n", args->op_type);
@@ -141,7 +141,7 @@ void *run_client(void *_args)
     pthread_barrier_wait(args->alloc_finish_barrier);
 
     args->op_type = "FREE_IMPROVEMENT";
-    client.workload_run_time_ = 500;
+    client.workload_run_time_ = 50;
     if (args->thread_id == 0)
     {
         pthread_barrier_init(args->timer_barrier, NULL, args->num_threads);
