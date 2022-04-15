@@ -402,9 +402,12 @@ void *client_ops_fb_cnt_ops_mm(void *arg)
         MMReqCtx *ctx = &fiber_args->client->mm_req_ctx_list_[idx + fiber_args->ops_st_idx];
         ctx->coro_id = fiber_args->coro_id;
         ctx->should_stop = fiber_args->should_stop;
+        printf("debug 1\n");
+        printf("ctx:%lld\n", *(uint64_t *)ctx->kv_info->l_addr);
 
         switch (ctx->req_type)
         {
+            printf("debug 2\n");
         case MM_REQ_ALLOC_BASELINE:
             ret = fiber_args->client->alloc_baseline(ctx);
             if (ret == MM_OPS_FAIL_RETURN)
@@ -420,7 +423,9 @@ void *client_ops_fb_cnt_ops_mm(void *arg)
             }
             break;
         case MM_REQ_ALLOC_IMPROVEMENT:
+            printf("debug 3\n");
             ret = fiber_args->client->alloc_improvement(ctx);
+            printf("debug 4\n");
             if (ret == MM_OPS_FAIL_RETURN)
             {
                 num_failed++;
@@ -438,7 +443,7 @@ void *client_ops_fb_cnt_ops_mm(void *arg)
             break;
         }
         cnt++;
-        printf("cnt: %d, ops_num: %d\n",cnt,fiber_args->ops_num);
+        printf("cnt: %d, ops_num: %d\n", cnt, fiber_args->ops_num);
         if (cnt > fiber_args->ops_num && is_finished == false)
         {
             is_finished = true;
