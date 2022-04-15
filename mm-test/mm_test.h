@@ -1,5 +1,5 @@
-#ifndef DDCKV_MICRO_TEST_H_
-#define DDCKV_MICRO_TEST_H_
+#ifndef DDCKV_MM_TEST_H_
+#define DDCKV_MM_TEST_H_
 
 #include <stdint.h>
 #include <pthread.h>

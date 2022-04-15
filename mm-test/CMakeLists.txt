@@ -1,4 +1,5 @@
 add_library(mm_latency_test mm_latency_test.cc)
+add_library(mm_test mm_test.cc)
 add_executable(mm_latency_test_baseline_client mm_latency_test_baseline_client.cc)
 add_executable(mm_latency_test_client mm_latency_test_client.cc)
 add_executable(mm_test_server mm_test_server.cc)
@@ -31,14 +32,14 @@ target_link_libraries(mm_test_server
     ibverbs
 )
 
-target_link_libraries(micro_test
+target_link_libraries(mm_test
     libddckv
     pthread
     ibverbs
 )
 
 target_link_libraries(mm_test_multi_client
-    micro_test
+    mm_test
     libddckv
     pthread
     ibverbs

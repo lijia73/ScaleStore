@@ -6,7 +6,7 @@
 
 #include <atomic>
 
-#include "micro_test.h"
+#include "mm_test.h"
 
 static void start_client_threads(char *op_type, int num_clients, GlobalConfig *config,
                                  char *config_fname)
