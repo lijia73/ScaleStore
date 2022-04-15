@@ -29,7 +29,7 @@ typedef struct TagMMRunClientArgs
     uint32_t client_id;
     uint32_t num_threads;
     char *op_type;
-    Client *client;
+    ClientFMM *client;
 } MMRunClientArgs;
 
 void *run_client(void *_args);
