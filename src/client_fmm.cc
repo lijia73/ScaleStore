@@ -168,7 +168,6 @@ int ClientFMM::alloc_baseline(MMReqCtx *ctx)
     {
         ctx->is_finished = true;
         ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
-        printf("err\n");
         return ctx->ret_val.ret_code;
     }
 
@@ -339,6 +338,7 @@ int ClientFMM::alloc_improvement(MMReqCtx *ctx)
     {
         ctx->is_finished = true;
         ctx->ret_val.ret_code = MM_OPS_FAIL_RETURN;
+        printf("err\n");
         return ctx->ret_val.ret_code;
     }
 
@@ -387,22 +387,25 @@ int ClientFMM::free_improvement(MMReqCtx *ctx)
     return ctx->ret_val.ret_code;
 }
 
-void * client_ops_fb_cnt_ops_mm(void * arg) {
+void *client_ops_fb_cnt_ops_mm(void *arg)
+{
     boost::this_fiber::yield();
-    ClientFMMFiberArgs * fiber_args = (ClientFMMFiberArgs *)arg;
+    ClientFMMFiberArgs *fiber_args = (ClientFMMFiberArgs *)arg;
     uint32_t num_failed = 0;
     int ret = 0;
-    
+
     // fiber_args->b->wait();
     uint32_t cnt = 0;
     bool is_finished = false;
-    while (*fiber_args->should_stop == false && fiber_args->ops_num != 0) {
+    while (*fiber_args->should_stop == false && fiber_args->ops_num != 0)
+    {
         uint32_t idx = cnt % fiber_args->ops_num;
-        MMReqCtx * ctx = &fiber_args->client->mm_req_ctx_list_[idx + fiber_args->ops_st_idx];
+        MMReqCtx *ctx = &fiber_args->client->mm_req_ctx_list_[idx + fiber_args->ops_st_idx];
         ctx->coro_id = fiber_args->coro_id;
         ctx->should_stop = fiber_args->should_stop;
 
-        switch (ctx->req_type) {
+        switch (ctx->req_type)
+        {
         case MM_REQ_ALLOC_BASELINE:
             ret = fiber_args->client->alloc_baseline(ctx);
             if (ret == MM_OPS_FAIL_RETURN)
@@ -430,13 +433,14 @@ void * client_ops_fb_cnt_ops_mm(void * arg) {
             {
                 num_failed++;
             }
-            break;        
+            break;
         default:
             assert(0);
             break;
         }
-        cnt ++;
-        if (cnt > fiber_args->ops_num && is_finished == false) {
+        cnt++;
+        if (cnt > fiber_args->ops_num && is_finished == false)
+        {
             is_finished = true;
             printf("finished!\n");
         }
@@ -447,8 +451,9 @@ void * client_ops_fb_cnt_ops_mm(void * arg) {
     return NULL;
 }
 
-pthread_t ClientFMM::start_polling_thread() {
-    NMPollingThreadArgs * args = (NMPollingThreadArgs *)malloc(sizeof(NMPollingThreadArgs));
+pthread_t ClientFMM::start_polling_thread()
+{
+    NMPollingThreadArgs *args = (NMPollingThreadArgs *)malloc(sizeof(NMPollingThreadArgs));
     args->nm = nm_;
     args->core_id = poll_core_id_;
 
@@ -457,6 +462,7 @@ pthread_t ClientFMM::start_polling_thread() {
     return polling_tid;
 }
 
-void ClientFMM::stop_polling_thread() {
+void ClientFMM::stop_polling_thread()
+{
     nm_->stop_polling();
 }
