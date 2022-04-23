@@ -7,7 +7,7 @@
 
 #define WORKLOAD_ALL (-1)
 // #define WORKLOAD_NUM WORKLOAD_ALL
-#define WORKLOAD_NUM 100000
+#define WORKLOAD_NUM 10000
 
 static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
 {
@@ -115,10 +115,10 @@ int test_free_improvement_lat(ClientFMM &client)
     return test_lat(client, "FREE_IMPROVEMENT", out_fname);
 }
 
-static int test_gc_lat(ClientFMM &client, const char *out_fname)
+static int test_gc_lat(ClientFMM &client, , char *op_type const char *out_fname)
 {
     int ret = 0;
-    printf("lat test gc\n");
+    printf("lat test gc %s\n", op_type);
     uint64_t *lat_list = (uint64_t *)malloc(sizeof(uint64_t) * client.num_local_operations_);
     memset(lat_list, 0, sizeof(uint64_t) * client.num_local_operations_);
 
@@ -128,13 +128,24 @@ static int test_gc_lat(ClientFMM &client, const char *out_fname)
     {
         MMReqCtx *ctx = &client.mm_req_ctx_list_[i];
         ctx->coro_id = 0;
-
-        gettimeofday(&st, NULL);
-        ret = client.fast_gc(ctx);
-        gettimeofday(&et, NULL);
-        if (ret == MM_OPS_FAIL_RETURN)
+        if (strcmp(op_type, "FAST_GC") == 0)
         {
-            num_failed++;
+            gettimeofday(&st, NULL);
+            ret = client.fast_gc(ctx);
+            gettimeofday(&et, NULL);
+            if (ret != 0)
+
+                num_failed++;
+        }
+        else
+        {
+            assert(strcmp(op_type, "SLOW_GC") == 0)
+            gettimeofday(&st, NULL);
+            ret = client.slow_gc();
+            gettimeofday(&et, NULL);
+            if (ret != 0)
+
+                num_failed++;
         }
 
         lat_list[i] = (et.tv_sec - st.tv_sec) * 1000000 + (et.tv_usec - st.tv_usec);
@@ -156,5 +167,13 @@ int test_fast_gc(ClientFMM &client)
     char out_fname[128];
     int num_rep = client.get_num_rep();
     sprintf(out_fname, "results/fast_gc_lat-%drp.txt", num_rep);
-    return test_gc_lat(client, out_fname);
+    return test_gc_lat(client, "FAST_GC", out_fname);
+}
+
+int test_slow_gc(ClientFMM &client)
+{
+    char out_fname[128];
+    int num_rep = client.get_num_rep();
+    sprintf(out_fname, "results/slow_gc_lat-%drp.txt", num_rep);
+    return test_gc_lat(client, "SLOW_GC" out_fname);
 }
