@@ -115,7 +115,7 @@ int test_free_improvement_lat(ClientFMM &client)
     return test_lat(client, "FREE_IMPROVEMENT", out_fname);
 }
 
-static int test_gc_lat(ClientFMM &client, , char *op_type const char *out_fname)
+static int test_gc_lat(ClientFMM &client,  char *op_type, const char *out_fname)
 {
     int ret = 0;
     printf("lat test gc %s\n", op_type);
