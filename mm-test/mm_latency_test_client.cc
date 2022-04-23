@@ -38,4 +38,7 @@ int main(int argc, char **argv)
 
     ret = test_free_improvement_lat(client);
     assert(ret == 0);
+
+    ret = test_fast_gc(client);
+    assert(ret == 0);
 }
