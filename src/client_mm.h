@@ -165,7 +165,6 @@ private:
     // for gc
     void init_gc_buf_();
     void free_gc_buf();
-    int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
     bool isbelongmine(uint64_t free_addr);
 
     // inline private methods
@@ -217,6 +216,8 @@ public:
     void mm_alloc_improvement(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
     int mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
 
+    int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
+    int mm_recovery(UDPNetworkManager *nm);
     // inline public methods
 public:
     inline uint64_t get_remote_meta_ptr()

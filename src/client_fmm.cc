@@ -471,3 +471,13 @@ void ClientFMM::stop_polling_thread()
 {
     nm_->stop_polling();
 }
+
+int ClientFMM::fast_gc(MMReqCtx *ctx)
+{
+    return mm_->syn_gc_info(nm_, ctx->addr_list, ctx->rkey_list, ctx->server_id_list)
+}
+
+int ClientFMM::slow_gc()
+{
+    return mm_->mm_recovery(nm_);
+}
