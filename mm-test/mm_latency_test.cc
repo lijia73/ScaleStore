@@ -175,5 +175,5 @@ int test_slow_gc(ClientFMM &client)
     char out_fname[128];
     int num_rep = client.get_num_rep();
     sprintf(out_fname, "results/slow_gc_lat-%drp.txt", num_rep);
-    return test_gc_lat(client, "SLOW_GC" out_fname);
+    return test_gc_lat(client, "SLOW_GC",out_fname);
 }

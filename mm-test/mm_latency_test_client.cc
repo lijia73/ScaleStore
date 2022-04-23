@@ -41,6 +41,9 @@ int main(int argc, char **argv)
 
     sleep(5);
 
+    ret = test_slow_gc(client);
+    assert(ret == 0);
+
     ret = test_fast_gc(client);
     assert(ret == 0);
 }
