@@ -1058,6 +1058,8 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
                                     client_gc_nums_addr_, rkey, 0);
     uint32_t num_subblocks = *(uint32_t *)gc_buf_;
 
+    printf("%d\n", num_subblocks);
+
     init_gc_buf_();
 
     // get gc info
