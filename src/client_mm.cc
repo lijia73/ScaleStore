@@ -1058,14 +1058,13 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
                                     client_gc_nums_addr_, rkey, 0);
     uint32_t num_subblocks = *(uint32_t *)gc_buf_;
 
-    printf("%d\n", num_subblocks);
-
     init_gc_buf_();
 
     // get gc info
     ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
                                     client_gc_addr_, rkey, 0);
     ClientGCAddrInfo *gc_info_ptr = (ClientGCAddrInfo *)gc_buf_;
+    assert(ret == 0);
 
     bool isgcinfochange = false;
 
