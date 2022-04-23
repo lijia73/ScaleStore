@@ -115,7 +115,7 @@ int test_free_improvement_lat(ClientFMM &client)
     return test_lat(client, "FREE_IMPROVEMENT", out_fname);
 }
 
-static int test_gc_lat(ClientFMM &client,  char *op_type, const char *out_fname)
+static int test_gc_lat(ClientFMM &client, char *op_type, const char *out_fname)
 {
     int ret = 0;
     printf("lat test gc %s\n", op_type);
@@ -134,17 +134,15 @@ static int test_gc_lat(ClientFMM &client,  char *op_type, const char *out_fname)
             ret = client.fast_gc(ctx);
             gettimeofday(&et, NULL);
             if (ret != 0)
-
                 num_failed++;
         }
         else
         {
-            assert(strcmp(op_type, "SLOW_GC") == 0)
+            assert(strcmp(op_type, "SLOW_GC") == 0);
             gettimeofday(&st, NULL);
             ret = client.slow_gc();
             gettimeofday(&et, NULL);
             if (ret != 0)
-
                 num_failed++;
         }
 
@@ -175,5 +173,5 @@ int test_slow_gc(ClientFMM &client)
     char out_fname[128];
     int num_rep = client.get_num_rep();
     sprintf(out_fname, "results/slow_gc_lat-%drp.txt", num_rep);
-    return test_gc_lat(client, "SLOW_GC",out_fname);
+    return test_gc_lat(client, "SLOW_GC", out_fname);
 }
