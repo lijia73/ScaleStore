@@ -7,7 +7,7 @@
 
 #define WORKLOAD_ALL (-1)
 // #define WORKLOAD_NUM WORKLOAD_ALL
-#define WORKLOAD_NUM 10000
+#define WORKLOAD_NUM 100
 
 static int test_lat(ClientFMM &client, char *op_type, const char *out_fname)
 {
@@ -139,6 +139,7 @@ static int test_gc_lat(ClientFMM &client, char *op_type, const char *out_fname)
         else
         {
             assert(strcmp(op_type, "SLOW_GC") == 0);
+            sleep(1);
             gettimeofday(&st, NULL);
             ret = client.slow_gc();
             gettimeofday(&et, NULL);
