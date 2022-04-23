@@ -135,9 +135,9 @@ static int test_gc_lat(ClientFMM &client, const char *out_fname)
         {
             num_failed++;
         }
-    }
 
-    lat_list[i] = (et.tv_sec - st.tv_sec) * 1000000 + (et.tv_usec - st.tv_usec);
+        lat_list[i] = (et.tv_sec - st.tv_sec) * 1000000 + (et.tv_usec - st.tv_usec);
+    }
     printf("Failed: %d\n", num_failed);
 
     FILE *lat_fp = fopen(out_fname, "w");
