@@ -141,17 +141,16 @@ static int test_gc_lat(ClientFMM &client, const char *out_fname)
     }
 
     lat_list[i] = (et.tv_sec - st.tv_sec) * 1000000 + (et.tv_usec - st.tv_usec);
-}
-printf("Failed: %d\n", num_failed);
+    printf("Failed: %d\n", num_failed);
 
-FILE *lat_fp = fopen(out_fname, "w");
-assert(lat_fp != NULL);
-for (int i = 0; i < client.num_local_operations_; i++)
-{
-    fprintf(lat_fp, "%ld\n", lat_list[i]);
-}
-fclose(lat_fp);
-return 0;
+    FILE *lat_fp = fopen(out_fname, "w");
+    assert(lat_fp != NULL);
+    for (int i = 0; i < client.num_local_operations_; i++)
+    {
+        fprintf(lat_fp, "%ld\n", lat_list[i]);
+    }
+    fclose(lat_fp);
+    return 0;
 }
 
 int test_fast_gc(ClientFMM &client)
