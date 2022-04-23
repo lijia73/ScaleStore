@@ -142,7 +142,6 @@ private:
     void update_mm_block_next(ClientMMBlock *mm_block);
     int remote_write_meta_addr(UDPNetworkManager *nm);
 
-    int mm_recovery(UDPNetworkManager *nm);
     int mm_recover_prepare_space(UDPNetworkManager *nm);
     int mm_gc_prepare_space(UDPNetworkManager *nm);
 
