@@ -117,7 +117,8 @@ int test_free_improvement_lat(ClientFMM &client)
 
 static int test_gc_lat(ClientFMM &client, const char *out_fname)
 {
-    printf("lat test gc %s\n", op_type);
+    int ret = 0;
+    printf("lat test gc %s\n");
     uint64_t *lat_list = (uint64_t *)malloc(sizeof(uint64_t) * client.num_local_operations_);
     memset(lat_list, 0, sizeof(uint64_t) * client.num_local_operations_);
 
