@@ -1054,14 +1054,14 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
 
     // get gc info num
     uint32_t rkey = nm->get_server_rkey(0);
-    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, sizeof(uint32_t),
+    ret = nm->nm_rdma_read_from_sid_sync(gc_buf_, gc_mr_->lkey, sizeof(uint32_t),
                                     client_gc_nums_addr_, rkey, 0);
     uint32_t num_subblocks = *(uint32_t *)gc_buf_;
 
     init_gc_buf_();
 
     // get gc info
-    ret = nm->nm_rdma_read_from_sid(gc_buf_, gc_mr_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
+    ret = nm->nm_rdma_read_from_sid_sync(gc_buf_, gc_mr_->lkey, num_subblocks * sizeof(ClientGCAddrInfo),
                                     client_gc_addr_, rkey, 0);
     ClientGCAddrInfo *gc_info_ptr = (ClientGCAddrInfo *)gc_buf_;
     assert(ret == 0);
@@ -1107,7 +1107,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
         for (int i = 0; i < num_replication_; i++)
         {
             uint32_t rkey = nm->get_server_rkey(i);
-            ret = nm->nm_rdma_write_inl_to_sid(&num_subblocks, sizeof(uint32_t),
+            ret = nm->nm_rdma_write_inl_to_sid_sync(&num_subblocks, sizeof(uint32_t),
                                                client_gc_nums_addr_, rkey, i);
             // assert(ret == 0);
         }
@@ -1118,7 +1118,7 @@ int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *
             for (int i = 0; i < num_replication_; i++)
             {
                 uint32_t rkey = nm->get_server_rkey(i);
-                ret = nm->nm_rdma_write_inl_to_sid(&gc_info_list_[0], num_subblocks * sizeof(ClientGCAddrInfo),
+                ret = nm->nm_rdma_write_inl_to_sid_sync(&gc_info_list_[0], num_subblocks * sizeof(ClientGCAddrInfo),
                                                    client_gc_addr_, rkey, i);
                 // assert(ret == 0);
             }
