@@ -983,7 +983,7 @@ int ClientMM::mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx)
         // not belong to same coarse-grained memory segment
         if (free_addr + mm_block_sz_ >= last_freed_addr_ || free_addr - mm_block_sz_ < last_freed_addr_)
         {
-            ret = syn_gc_info(nm, ctx->addr_list, ctx->rkey_list, ctx->server_id_list);
+            ret = syn_gc_info(nm);
         }
     }
 
@@ -1045,7 +1045,7 @@ void ClientMM::mm_free_remote(uint64_t *addr_list, uint32_t *rkey_list, const ui
     subblock_free_queue_remote_.push(tmp_info);
 }
 
-int ClientMM::syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list)
+int ClientMM::syn_gc_info(UDPNetworkManager *nm)
 {
     int ret = 0;
     // TODO: traverse every client

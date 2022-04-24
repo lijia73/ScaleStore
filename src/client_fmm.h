@@ -298,7 +298,7 @@ public:
 
     int load_seq_mm_requests(uint32_t num_ops, char *op_type);
 
-    int fast_gc(MMReqCtx *ctx);
+    int fast_gc();
     int slow_gc();
 
     int get_num_rep();

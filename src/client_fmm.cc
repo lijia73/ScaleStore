@@ -472,9 +472,9 @@ void ClientFMM::stop_polling_thread()
     nm_->stop_polling();
 }
 
-int ClientFMM::fast_gc(MMReqCtx *ctx)
+int ClientFMM::fast_gc()
 {
-    return mm_->syn_gc_info(nm_, ctx->mm_alloc_ctx.addr_list, ctx->mm_alloc_ctx.rkey_list, ctx->mm_alloc_ctx.server_id_list);
+    return mm_->syn_gc_info(nm_);
 }
 
 int ClientFMM::slow_gc()

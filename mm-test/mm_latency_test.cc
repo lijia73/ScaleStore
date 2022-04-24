@@ -131,7 +131,7 @@ static int test_gc_lat(ClientFMM &client, char *op_type, const char *out_fname)
         if (strcmp(op_type, "FAST_GC") == 0)
         {
             gettimeofday(&st, NULL);
-            ret = client.fast_gc(ctx);
+            ret = client.fast_gc();
             gettimeofday(&et, NULL);
             if (ret != 0)
                 num_failed++;
