@@ -215,7 +215,7 @@ public:
     void mm_alloc_improvement(size_t size, UDPNetworkManager *nm, __OUT ClientMMAllocCtx *ctx);
     int mm_free_improvement(UDPNetworkManager *nm, ClientMMAllocCtx *ctx);
 
-    int syn_gc_info(UDPNetworkManager *nm, uint64_t *addr_list, uint32_t *rkey_list, const uint8_t *server_id_list);
+    int syn_gc_info(UDPNetworkManager *nm);
     int mm_recovery(UDPNetworkManager *nm);
     // inline public methods
 public:
